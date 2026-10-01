@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream-50: #FAF4E5;
+  --color-cream-100: #F7F1E5;
+  --color-cream-200: #F2E5D6;
+  --color-surface: #FDFAF5;
+  --color-white: #FEFEFD;
+  --color-primary: #C48762;
+  --color-primary-light: #DFA984;
+  --color-primary-dark: #B37650;
+  --color-primary-deep: #855B41;
+}
+
+:root {
+  /* Color Tokens per design specs */
+  --cream-50: #FAF4E5;      /* Main app background */
+  --cream-100: #F7F1E5;     /* Secondary background */
+  --cream-200: #F2E5D6;     /* Soft panels / selected backgrounds */
+  --surface: #FDFAF5;       /* Cards / modal */
+  --white: #FEFEFD;         /* Chat bubbles / high emphasis surface */
+  --primary: #C48762;       /* Main brand color */
+  --primary-light: #DFA984; /* Hover/light accent */
+  --primary-dark: #B37650;  /* Active button / selected case */
+  --primary-deep: #855B41;  /* Stronger brown accent */
+
+  /* Semantic neutrals & accents tailored to the palette */
+  --text-primary: #2C2219;
+  --text-secondary: #6B5B50;
+  --text-muted: #968374;
+  --border-subtle: #E8D9C8;
+  --border-strong: #D6C2AE;
+  --border-focus: #C48762;
+
+  --accent-red: #D93838;
+  --accent-red-bg: #FDF2F2;
+  --accent-red-border: #F8B4B4;
+  --accent-green: #2E7D32;
+  --accent-green-bg: #F0FDF4;
+  --accent-green-border: #86EFAC;
+  --accent-blue: #2563EB;
+  --accent-blue-bg: #EFF6FF;
+  --accent-blue-border: #93C5FD;
+  --accent-amber: #D97706;
+  --accent-amber-bg: #FFFBEB;
+  --accent-amber-border: #FCD34D;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Newsreader', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Elevation & Shadows */
+  --shadow-xs: 0 1px 2px rgba(133, 91, 65, 0.05);
+  --shadow-sm: 0 2px 4px rgba(133, 91, 65, 0.07);
+  --shadow-md: 0 6px 16px rgba(133, 91, 65, 0.09);
+  --shadow-lg: 0 12px 28px rgba(133, 91, 65, 0.12);
+  --shadow-modal: 0 20px 40px rgba(78, 53, 38, 0.22);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-smooth: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--cream-50);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Custom scrollbars matching cream theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cream-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseRedAlert {
+  0%, 100% {
+    background-color: rgba(217, 56, 56, 0.12);
+    border-color: rgba(217, 56, 56, 0.7);
+  }
+  50% {
+    background-color: rgba(217, 56, 56, 0.25);
+    border-color: rgba(217, 56, 56, 1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulseRedAlert {
+  animation: pulseRedAlert 2s infinite ease-in-out;
+}
+
+/* Common utility classes */
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-primary {
+  background: var(--cream-200);
+  color: var(--primary-deep);
+  border: 1px solid var(--border-strong);
+}
+
+.badge-red {
+  background: var(--accent-red-bg);
+  color: var(--accent-red);
+  border: 1px solid var(--accent-red-border);
+}
+
+.badge-green {
+  background: var(--accent-green-bg);
+  color: var(--accent-green);
+  border: 1px solid var(--accent-green-border);
+}
+
+.badge-amber {
+  background: var(--accent-amber-bg);
+  color: var(--accent-amber);
+  border: 1px solid var(--accent-amber-border);
+}
+
+.badge-blue {
+  background: var(--accent-blue-bg);
+  color: var(--accent-blue);
+  border: 1px solid var(--accent-blue-border);
+}
+
+/* Red mismatch highlight from prompt requirements */
+.mismatch-highlight {
+  background-color: rgba(217, 56, 56, 0.15);
+  border-bottom: 2px dashed var(--accent-red);
+  color: var(--accent-red);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-block;
+}
+
+.mismatch-highlight:hover {
+  background-color: rgba(217, 56, 56, 0.28);
+  box-shadow: 0 0 8px rgba(217, 56, 56, 0.3);
+}
+
+/* Clean Button styles */
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--white);
+  border: 1px solid var(--primary-dark);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  background-color: var(--primary-dark);
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background-color: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+  background-color: var(--cream-200);
+  border-color: var(--border-strong);
+}
+
+.btn-secondary:active {
+  background-color: var(--cream-200);
+}
