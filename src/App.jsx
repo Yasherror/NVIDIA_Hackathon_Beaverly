@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
-import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
-import Overview from './components/Overview';
-import SelfEvolvingMemory from './components/SelfEvolvingMemory';
-import MemoryScopeDetection from './components/MemoryScopeDetection';
-import StrictCaseIsolation from './components/StrictCaseIsolation';
-import PreSubmissionVerification from './components/PreSubmissionVerification';
-import BelawMascotGuide from './components/BelawMascotGuide';
+import TopNav from './components/TopNav';
+import LeftSidebar from './components/LeftSidebar';
+import SettingsModal from './components/SettingsModal';
+
+// Placeholder components, we will implement these next
+import DashboardTab from './components/DashboardTab';
+import ChatWorkspace from './components/ChatWorkspace';
+import SkillsLibrary from './components/SkillsLibrary';
+import CasesManagement from './components/CasesManagement';
+import ProtectionRecord from './components/ProtectionRecord';
+
 import { CASES, INITIAL_SKILLS } from './data/mockData';
 import './App.css';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [currentCaseId, setCurrentCaseId] = useState('case-a');
   const [skills, setSkills] = useState(INITIAL_SKILLS);
+  const [showSettings, setShowSettings] = useState(false);
 
   const currentCase = CASES.find(c => c.id === currentCaseId) || CASES[0];
 
@@ -21,73 +25,35 @@ function App() {
     setSkills(prev => [newSkill, ...prev]);
   };
 
-  const handleResetDemo = () => {
-    setSkills(INITIAL_SKILLS);
-    setCurrentCaseId('case-a');
-  };
-
   return (
-    <div className="belaw-app">
-      {/* Top Navbar */}
-      <Navbar
-        currentCaseId={currentCaseId}
-        onSelectCase={setCurrentCaseId}
-        onResetDemo={handleResetDemo}
-        activeTab={activeTab}
-        skillsCount={skills.length}
+    <div className="h-screen w-screen flex flex-col bg-[#fdfaf3] text-[#4a3424] font-sans overflow-hidden">
+      <TopNav 
+        activeTab={activeTab} 
+        onSelectTab={setActiveTab} 
+        onOpenSettings={() => setShowSettings(true)} 
       />
-
-      {/* Main Layout */}
-      <div className="belaw-main-container flex flex-col md:flex-row">
-        {/* Left Sidebar featuring the 4 required pillars */}
-        <Sidebar
-          activeTab={activeTab}
-          onSelectTab={setActiveTab}
-          currentCase={currentCase}
-          skillsCount={skills.length}
-          mismatchCount={4}
-        />
-
-        {/* Center Workspace */}
-        <main className="belaw-workspace max-w-7xl mx-auto w-full">
-          {activeTab === 'overview' && (
-            <Overview 
-              onSelectTab={setActiveTab} 
+      
+      <div className="flex-1 flex overflow-hidden relative">
+        {activeTab !== 'dashboard' && (
+          <LeftSidebar currentCaseId={currentCaseId} onSelectCase={setCurrentCaseId} />
+        )}
+        
+        <main className="flex-1 overflow-y-auto bg-[#faf6ed] relative">
+          {activeTab === 'dashboard' && <DashboardTab onSelectTab={setActiveTab} />}
+          {activeTab === 'chat' && (
+            <ChatWorkspace 
               currentCase={currentCase} 
+              skills={skills} 
+              onAddSkill={handleAddSkill} 
             />
           )}
-
-          {activeTab === 'feature-1' && (
-            <SelfEvolvingMemory
-              skills={skills}
-              onAddSkill={handleAddSkill}
-            />
-          )}
-
-          {activeTab === 'feature-2' && (
-            <MemoryScopeDetection
-              currentCaseId={currentCaseId}
-              onSelectCase={setCurrentCaseId}
-              skills={skills}
-              onAddSkill={handleAddSkill}
-            />
-          )}
-
-          {activeTab === 'feature-3' && (
-            <StrictCaseIsolation />
-          )}
-
-          {activeTab === 'feature-4' && (
-            <PreSubmissionVerification />
-          )}
+          {activeTab === 'skills' && <SkillsLibrary skills={skills} />}
+          {activeTab === 'cases' && <CasesManagement currentCaseId={currentCaseId} />}
+          {activeTab === 'logs' && <ProtectionRecord />}
         </main>
       </div>
 
-      {/* Floating Interactive Beaver Mascot Guide */}
-      <BelawMascotGuide
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-      />
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
