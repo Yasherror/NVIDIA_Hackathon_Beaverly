@@ -72,5 +72,15 @@ async def init_db():
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        # Seed sample closed case if empty
+        async with db.execute("SELECT COUNT(*) FROM cases") as cur:
+            count = (await cur.fetchone())[0]
+            if count == 0:
+                await db.execute("""
+                    INSERT INTO cases (id, matter_id, client_name, opponent, short_name, files_count, status, created_at, closed_at)
+                    VALUES ('case-abc-mock', 'MATTER-2026-ABCHLD', 'ABC Holdings', 'XYZ Corp', 'ABC Holdings Contract', 11, 'closed', '2026-09-10 10:00:00', '2026-09-24 14:30:00')
+                """)
+
         await db.commit()
     logger.info(f"SQLite DB initialized at {DB_PATH}")

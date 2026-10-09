@@ -23,10 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 
-# Backend
-backend/.env
+# Backend & DB
+*.db
 backend/db/
 backend/uploads/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/*.pyc
+
+# Environment & Secrets
+.env
+*.env
+backend/.env
+!*.env.example

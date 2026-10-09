@@ -34,14 +34,14 @@ export default function BelawMascotGuide({ activeTab, onSelectTab }) {
       speech: "When you change 'Party A' to 'ABC Holdings', I detect that 'ABC Holdings' is a proper noun entity. I tag it to Case A only so when you switch to Case B, that information is strictly invisible!",
       actionText: "Test OpenShell Kernel Security",
       actionTarget: "feature-3",
-      mascotImg: "/assets/beaver_thinking_1790529664366.jpg"
+      mascotImg: "/assets/mascot.png"
     },
     'feature-3': {
       title: "OpenShell Kernel Boundary",
       speech: "Application logic like if(case == A) can be defeated by prompt injections. OpenShell enforces security at the Linux kernel/eBPF level. When Case B tries to touch Case A's files: ❌ DENIED!",
       actionText: "Try Pre-Submission Verification",
       actionTarget: "feature-4",
-      mascotImg: "/assets/beaver_gavel_1790529642074.jpg"
+      mascotImg: "/assets/mascot.png"
     },
     'feature-4': {
       title: "Nebius Rerank Verification",
@@ -121,9 +121,6 @@ export default function BelawMascotGuide({ activeTab, onSelectTab }) {
             src="/assets/mascot.png" 
             alt="Belaw Mascot" 
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = '/assets/beaver_avatar_1790529726037.jpg';
-            }}
           />
         </div>
         <div className="text-left hidden sm:block">

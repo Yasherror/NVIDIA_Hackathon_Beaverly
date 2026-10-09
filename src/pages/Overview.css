@@ -1,0 +1,24 @@
+﻿.dashboard-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+.header-left { display: flex; align-items: center; gap: 20px; }
+.header-title { display: flex; align-items: center; gap: 12px; font-size: 1.8rem; }
+.header-subtitle { color: var(--text-secondary); font-size: 1rem; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 24px; margin-bottom: 24px; }
+.stat-card { display: flex; align-items: center; gap: 20px; }
+
+/* Fixed: Solid filled circle, no border */
+.stat-icon-wrapper { width: 56px; height: 56px; border-radius: 50%; background-color: var(--bg-icon-circle); border: none; display: flex; align-items: center; justify-content: center; color: var(--text-primary); }
+
+.stat-content h3 { font-size: 1rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 4px; }
+.stat-content p { font-size: 2.2rem; font-weight: 700; color: var(--text-primary); line-height: 1; }
+.stat-content .stat-desc { font-size: 0.9rem; color: var(--text-tertiary); margin-top: 4px; font-weight: 400; }
+.content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.list-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.list-card-header h2 { font-size: 1.3rem; }
+.list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background-color: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); margin-bottom: 12px; transition: all var(--transition-fast); cursor: pointer; }
+.list-item:hover { border-color: var(--border-dark); transform: translateX(2px); }
+.item-left { display: flex; align-items: center; gap: 16px; font-weight: 500; font-size: 1.05rem; }
+.item-right { display: flex; align-items: center; gap: 16px; color: var(--text-secondary); }
+
+.list-icon-wrapper { width: 36px; height: 36px; border-radius: 8px; background-color: var(--bg-icon-circle); display: flex; align-items: center; justify-content: center; color: var(--text-primary); }
+
+.icon-brown { color: var(--text-primary); }

@@ -454,9 +454,6 @@ export default function SelfEvolvingMemory({ skills, onAddSkill }) {
                   src="/assets/mascot.png" 
                   alt="Belaw Mascot" 
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = '/assets/beaver_waving_1790529614042.jpg';
-                  }}
                 />
               </div>
 

@@ -7,10 +7,10 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     # Nebius Token Factory
     nebius_api_key: str = ""
-    nebius_base_url: str = "https://api.studio.nebius.com/v1"
+    nebius_base_url: str = "https://api.studio.nebius.ai/v1/"
 
     # Models
-    model_nano: str = "Qwen/Qwen3-30B-A3B"
+    model_nano: str = "nvidia/llama-3.1-nemotron-70b-instruct"
     model_super: str = "nvidia/llama-3.1-nemotron-70b-instruct"
     model_embed: str = "BAAI/bge-en-icl"
 
@@ -33,3 +33,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+

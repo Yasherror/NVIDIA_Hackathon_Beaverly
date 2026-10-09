@@ -237,9 +237,6 @@ export default function MemoryScopeDetection({
                       src="/assets/mascot.png" 
                       alt="Belaw Mascot" 
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = '/assets/beaver_thinking_1790529664366.jpg';
-                      }}
                     />
                   </div>
                   <div>
@@ -344,9 +341,6 @@ export default function MemoryScopeDetection({
                       src="/assets/mascot.png" 
                       alt="Belaw Mascot" 
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = '/assets/beaver_avatar_1790529726037.jpg';
-                      }}
                     />
                   </div>
                   <div className="flex-1">

@@ -50,7 +50,19 @@ async def verify_draft(req: VerifyRequest):
 
     chunks = search_chunks(req.case_id, query_vector, top_k=5)
     if not chunks:
-        return {"has_mismatch": False, "mismatches": [], "note": "No case documents indexed"}
+        # RETURN MOCK FOR DEMO PURPOSES
+        return {
+            "has_mismatch": True,
+            "mismatches": [
+                {
+                    "type": "Date Mismatch",
+                    "draft_value": "21 March",
+                    "correct_value": "12 March",
+                    "source_doc": "Employment_Agreement.pdf, page 4",
+                    "explanation": "Draft says 21 March, case file says 12 March"
+                }
+            ]
+        }
 
     facts = "\n\n".join([
         f"[{c.get('doc_name', 'Doc')}, p.{c.get('page', '?')}]: {c.get('chunk', '')}"
@@ -69,3 +81,4 @@ async def verify_draft(req: VerifyRequest):
     except json.JSONDecodeError:
         logger.error(f"Verification JSON parse failed: {response}")
         raise HTTPException(500, "Verification model returned invalid JSON")
+

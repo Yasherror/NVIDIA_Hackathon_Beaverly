@@ -51,10 +51,22 @@ async def get_case(case_id: str):
 
 @router.patch("/{case_id}/close")
 async def close_case(case_id: str):
+    now_iso = datetime.utcnow().isoformat()
     async with aiosqlite.connect(settings.db_path) as db:
         await db.execute(
             "UPDATE cases SET status='closed', closed_at=? WHERE id=?",
-            (datetime.utcnow().isoformat(), case_id)
+            (now_iso, case_id)
+        )
+        # Purge case-specific skills upon case closure
+        await db.execute(
+            "DELETE FROM skills WHERE case_id=? AND scope='case-specific'",
+            (case_id,)
+        )
+        # Record audit log
+        await db.execute(
+            """INSERT INTO protection_logs (case_id, action, resource, reason, agent)
+               VALUES (?, 'ALLOW', ?, 'Case closed: Purged case memories & skills', 'OpenShell Engine')""",
+            (case_id, f"case/{case_id}")
         )
         await db.commit()
-    return {"status": "closed"}
+    return {"status": "closed", "closed_at": now_iso}

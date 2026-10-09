@@ -31,9 +31,6 @@ export default function Navbar({
                 src="/assets/mascot.png" 
                 alt="Belaw Mascot" 
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = '/assets/beaver_avatar_1790529726037.jpg';
-                }}
               />
             </div>
             <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-pulse" title="Belaw Engine Online"></span>

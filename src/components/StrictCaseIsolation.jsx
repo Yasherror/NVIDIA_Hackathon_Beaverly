@@ -228,9 +228,6 @@ export default function StrictCaseIsolation() {
                       src="/assets/mascot.png" 
                       alt="Belaw Mascot Gavel" 
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = '/assets/beaver_gavel_1790529642074.jpg';
-                      }}
                     />
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] italic leading-tight">
