@@ -30,6 +30,7 @@ backend/uploads/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/*.pyc
+backend/.venv312/
 
 # Environment & Secrets
 .env
