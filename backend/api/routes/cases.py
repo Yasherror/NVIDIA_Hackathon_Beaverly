@@ -1,4 +1,4 @@
-﻿"""API routes: Case management"""
+"""API routes: Case management"""
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import aiosqlite, uuid

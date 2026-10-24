@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Lock, FileText, Brain, ExternalLink, AlertTriangle, X, Trash2, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lock, FileText, Brain, ExternalLink, AlertTriangle, X, Trash2, CheckCircle2, ShieldCheck } from 'lucide-react';
 import './Cases.css';
 
 export default function Cases({ setActiveTab, onOpenCase }) {
@@ -10,6 +10,7 @@ export default function Cases({ setActiveTab, onOpenCase }) {
   const [newCaseName, setNewCaseName] = useState('');
   const [clientName, setClientName] = useState('');
   const [opponentName, setOpponentName] = useState('');
+  const [conflictResult, setConflictResult] = useState(null);
   
   const [activeCases, setActiveCases] = useState([]);
 
@@ -80,6 +81,12 @@ export default function Cases({ setActiveTab, onOpenCase }) {
     }
   };
 
+  const runConflictCheck = async () => {
+    const params = new URLSearchParams({ client: clientName, opponent: opponentName });
+    const res = await fetch(`http://localhost:8000/api/intelligence/conflicts?${params}`);
+    setConflictResult(await res.json());
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Today';
     let s = dateString;
@@ -107,7 +114,12 @@ export default function Cases({ setActiveTab, onOpenCase }) {
       <div className="cases-top-bar">
         <h1 className="cases-page-title">Cases</h1>
         <div className="cases-top-right" style={{display: 'flex', alignItems: 'center', gap: 12}}>
-          <img src="/src/assets/belawbeaver.jpg" alt="Mascot" className="cases-mascot-peek" />
+          <img 
+            src="/assets/mascot.png" 
+            alt="Barry the Beaver" 
+            className="cases-mascot-peek" 
+            onError={(e) => { e.target.src = '/src/assets/belawbeaver.jpg'; }}
+          />
           <div className="cases-count-pill">{activeCases.length} cases</div>
           <button className="btn-filled" style={{display: 'flex', alignItems: 'center', gap: 6, marginLeft: '8px'}} onClick={() => setShowNewCaseModal(true)}>
             <div style={{fontSize: '18px', fontWeight: 'bold'}}>+</div> New Case
@@ -221,6 +233,8 @@ export default function Cases({ setActiveTab, onOpenCase }) {
               <div className="form-group">
                 <label>Opposing Party (Optional)</label>
                 <input type="text" placeholder="e.g. ABC Holdings" value={opponentName} onChange={(e) => setOpponentName(e.target.value)} />
+                <button type="button" className="btn-outline" style={{marginTop: 8, display:'flex', alignItems:'center', gap:6}} onClick={runConflictCheck}><ShieldCheck size={15} /> Run conflict pre-flight</button>
+                {conflictResult && <div className="help-text" style={{color: conflictResult.status === 'clear' ? '#2f7d46' : '#b52b27', fontWeight: 700}}>{conflictResult.status === 'clear' ? 'Clear: no matching parties in existing matters.' : `Review required: ${conflictResult.matches.length} matching matter(s) found.`}</div>}
               </div>
               <div className="form-group">
                 <label>Initial Documents (Optional)</label>

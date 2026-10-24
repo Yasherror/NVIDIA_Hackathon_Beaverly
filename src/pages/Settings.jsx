@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   Key, ShieldCheck, Database, Eye, EyeOff, Lock, Brain, 
   Info, ExternalLink, Check, Copy, RefreshCw, Download, AlertCircle
@@ -490,6 +490,12 @@ rules:
             >
               <ExternalLink size={15} /> View Protection Logs
             </button>
+            <button 
+              className="btn-card-action" 
+              onClick={() => window.open('http://localhost:8000/api/logs/export', '_blank')}
+            >
+              <Download size={15} /> Export Audit Log (PDF/JSON)
+            </button>
             <button className="btn-card-action" onClick={handleExportSkills}>
               <Download size={15} /> Export Learned Skills
             </button>
@@ -521,14 +527,19 @@ rules:
                 <p>Architectural stack and open-source system diagnostics</p>
               </div>
             </div>
-            <span className="card-pill-tag">v1.0.0</span>
+            <span className="card-pill-tag">v7.0 (Final Integrated Version)</span>
           </div>
 
           <div className="about-hero-row">
-            <img src="/src/assets/belawbeaver.jpg" alt="Mascot" className="about-mascot-img" />
+            <img 
+              src="/assets/mascot.png" 
+              alt="Barry the Beaver" 
+              className="about-mascot-img" 
+              onError={(e) => { e.target.src = '/src/assets/belawbeaver.jpg'; }}
+            />
             <div className="about-title-block">
               <h4>Beaverly Legal Intelligence</h4>
-              <p>Assembled using the NVIDIA NemoClaw blueprint</p>
+              <p>Mascot: Barry the Beaver • Assembled using NVIDIA NemoClaw blueprint</p>
             </div>
           </div>
 

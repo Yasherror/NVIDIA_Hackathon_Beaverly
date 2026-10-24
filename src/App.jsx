@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Overview from './pages/Overview';
 import Chat from './pages/Chat';
@@ -6,6 +6,7 @@ import Skills from './pages/Skills';
 import Cases from './pages/Cases';
 import Logs from './pages/Logs';
 import Settings from './pages/Settings';
+import BarryMascotGuide from './components/BarryMascotGuide';
 import './index.css';
 
 function App() {
@@ -28,7 +29,9 @@ function App() {
         {activeTab === 'logs' && <Logs />}
         {activeTab === 'settings' && <Settings setActiveTab={setActiveTab} />}
       </main>
+      <BarryMascotGuide activeTab={activeTab} onSelectTab={setActiveTab} />
     </div>
   );
 }
+
 export default App;

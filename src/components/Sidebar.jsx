@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { LayoutDashboard, MessageSquare, Sparkles, Folder, ShieldCheck, Settings } from 'lucide-react';
 import './Sidebar.css';
 
@@ -19,8 +19,13 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="sidebar-logo">
-        <img src="/src/assets/mascot.png" alt="Belaw" className="logo-img" />
-        <span className="logo-text">Belaw</span>
+        <img 
+          src="/assets/mascot.png" 
+          alt="Beaverly" 
+          className="logo-img" 
+          onError={(e) => { e.target.src = '/src/assets/belawbeaver.jpg'; }}
+        />
+        <span className="logo-text">Beaverly</span>
       </div>
       <nav className="sidebar-nav">
         {navItems.map((item) => {
@@ -35,7 +40,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
         })}
       </nav>
       <div className="sidebar-bottom">
-        <button className="nav-item settings-btn" onClick={() => setActiveTab('settings')}>
+        <button className={`nav-item settings-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
           <Settings size={24} className="nav-icon" />
           <span className="nav-label">Settings</span>
         </button>
@@ -43,4 +48,3 @@ export default function Sidebar({ activeTab, setActiveTab }) {
     </div>
   );
 }
-

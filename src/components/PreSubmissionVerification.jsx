@@ -146,7 +146,7 @@ export default function PreSubmissionVerification() {
               Pre-Submission Verification
             </h1>
             <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-              <strong>What it does:</strong> Before a draft is sent out, Belaw checks line by line whether client names, dates, amounts, and factual statements match the original case files. Inconsistencies are highlighted in red with source citations.
+              <strong>What it does:</strong> Before a draft is sent out, Beaverly checks line by line whether client names, dates, amounts, and factual statements match the original case files. Inconsistencies are highlighted in red with source citations.
             </p>
           </div>
 
@@ -179,7 +179,7 @@ export default function PreSubmissionVerification() {
               Core Legal Design Principle
             </div>
             <p className="text-sm font-serif font-bold text-[var(--text-primary)] mt-0.5">
-              "Belaw does not say 'This document is correct.' It only says 'I found something that may not match your source.' Final judgment belongs to the lawyer."
+              "Beaverly does not say 'This document is correct.' It only says 'I found something that may not match your source.' Final judgment belongs to the lawyer."
             </p>
             <div className="text-[11px] text-[var(--text-secondary)] mt-1">
               Automated Rerank retrieval over private case repository. All decisions remain strictly with counsel.

@@ -226,12 +226,13 @@ export default function StrictCaseIsolation() {
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-[var(--cream-100)] border border-[var(--primary)] flex-shrink-0">
                     <img 
                       src="/assets/mascot.png" 
-                      alt="Belaw Mascot Gavel" 
+                      alt="Barry the Beaver" 
                       className="w-full h-full object-cover"
+                      onError={(e) => { e.target.src = '/src/assets/belawbeaver.jpg'; }}
                     />
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] italic leading-tight">
-                    <strong>Belaw Mascot says:</strong> "Prompt injections can trick AI prompts, but they cannot trick the Linux kernel. Case A's files remain 100% physically isolated!"
+                    <strong>Barry the Beaver says:</strong> "Prompt injections can trick AI prompts, but they cannot trick the Linux kernel. Case A's files remain 100% physically isolated per OpenShell policy!"
                   </p>
                 </div>
               </div>

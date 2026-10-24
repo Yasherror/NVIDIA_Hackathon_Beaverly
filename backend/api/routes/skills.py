@@ -17,6 +17,7 @@ class SkillCreate(BaseModel):
     learned_from: str = ""
     confidence: float = 0.9
     description: str = ""
+    occurrences: int = 1
 
 @router.get("/")
 async def list_skills(scope: str = None, case_id: str = None):
@@ -35,15 +36,23 @@ async def list_skills(scope: str = None, case_id: str = None):
 
 @router.post("/")
 async def create_skill(data: SkillCreate):
+    if data.scope not in {"global", "case-specific"}:
+        raise HTTPException(422, "scope must be 'global' or 'case-specific'")
+    if data.scope == "case-specific" and not data.case_id:
+        raise HTTPException(422, "case_id is required for a case-specific skill")
+    if data.scope == "global":
+        data.case_id = None
     skill_id = f"skill-{uuid.uuid4().hex[:8]}"
     async with aiosqlite.connect(settings.db_path) as db:
         await db.execute(
             """INSERT INTO skills (id, scope, case_id, name, trigger_pattern, replacement,
                category, learned_from, confidence, description)
                VALUES (?,?,?,?,?,?,?,?,?,?)""",
-            (skill_id, data.scope, data.case_id, data.name, data.trigger_pattern,
-             data.replacement, data.category, data.learned_from, data.confidence, data.description)
+             (skill_id, data.scope, data.case_id, data.name, data.trigger_pattern,
+              data.replacement, data.category, data.learned_from, data.confidence, data.description)
         )
+        if data.occurrences > 1:
+            await db.execute("UPDATE skills SET occurrences=? WHERE id=?", (data.occurrences, skill_id))
         await db.commit()
     return {"id": skill_id}
 

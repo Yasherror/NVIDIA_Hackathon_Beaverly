@@ -6,6 +6,8 @@ echo =======================================
 echo 1. Starting FastAPI Backend...
 start "Beaverly Backend" cmd /k "cd backend && uvicorn main:app --reload --port 8000"
 
+//.\.venv312\Scripts\python.exe -m uvicorn main:app --reload --port 8000
+
 echo 2. Starting React Frontend...
 start "Beaverly Frontend" cmd /k "npm run dev"
 

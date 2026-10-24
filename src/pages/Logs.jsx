@@ -1,62 +1,114 @@
-﻿import React from 'react';
-import { Upload, Shield, Check, ShieldAlert } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, Shield, Check, ShieldAlert, Download, RefreshCw } from 'lucide-react';
+import { apiClient } from '../api/apiClient';
 import './Logs.css';
 
 export default function Logs() {
-  const records = [
-    { id: 1, time: '10:42 AM', date: '24 Sep 2025', status: 'allowed', title: 'Allowed: read Chen case / contract.pdf', sub: 'Accessed by Belaw (AI assistant) · Chen Employment Dispute' },
-    { id: 2, time: '09:17 AM', date: '24 Sep 2025', status: 'allowed', title: 'Allowed: read Chen case / case_brief.pdf', sub: 'Accessed by Belaw (AI assistant) · Chen Employment Dispute' },
-    { id: 3, time: '04:32 PM', date: '23 Sep 2025', status: 'blocked', title: 'Blocked: attempted cross-case access to Wang case files - denied by OpenShell policy', sub: 'Accessed by Belaw (AI assistant) · Attempted: Wang Property Matter / strategy_notes.pdf' },
-    { id: 4, time: '03:15 PM', date: '23 Sep 2025', status: 'allowed', title: 'Allowed: read Chen case / evidence_list.xlsx', sub: 'Accessed by Belaw (AI assistant) · Chen Employment Dispute' },
-    { id: 5, time: '11:08 AM', date: '23 Sep 2025', status: 'allowed', title: 'Allowed: read Chen case / agreement_draft.docx', sub: 'Accessed by Belaw (AI assistant) · Chen Employment Dispute' },
-    { id: 6, time: '10:24 AM', date: '23 Sep 2025', status: 'allowed', title: 'Allowed: read Chen case / client_notes.txt', sub: 'Accessed by Belaw (AI assistant) · Chen Employment Dispute' },
-    { id: 7, time: '09:03 AM', date: '23 Sep 2025', status: 'allowed', title: 'Allowed: read Chen case / timeline.pdf', sub: 'Accessed by Belaw (AI assistant) · Chen Employment Dispute' },
-  ];
+  const [logs, setLogs] = useState([]);
+  const [summary, setSummary] = useState({ total_allowed: 0, total_denied: 0, cross_case_leaks_prevented: 0 });
+  const [loading, setLoading] = useState(true);
+
+  const fetchLogs = async () => {
+    setLoading(true);
+    try {
+      const logData = await apiClient.get('/logs/?limit=50');
+      const sumData = await apiClient.get('/logs/summary');
+      setLogs(logData);
+      setSummary(sumData);
+    } catch (err) {
+      console.error('Failed to load protection logs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const handleExport = () => {
+    window.open('http://localhost:8000/api/logs/export', '_blank');
+  };
+
+  const formatTime = (ts) => {
+    if (!ts) return { time: 'Recent', date: 'Today' };
+    const d = new Date(ts.includes('T') ? ts : ts.replace(' ', 'T') + 'Z');
+    if (isNaN(d.getTime())) return { time: ts, date: 'Today' };
+    return {
+      time: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      date: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    };
+  };
 
   return (
     <div className="logs-page-container">
       <div className="logs-top-bar">
-        <h1 className="logs-page-title">Protection Record</h1>
-        <button className="btn-export"><Upload size={18} /> Export</button>
+        <div>
+          <h1 className="logs-page-title">Protection Record</h1>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Linux LSM / eBPF Kernel Policy Audit Trail • Enforced by OpenShell
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="btn-export" onClick={fetchLogs} title="Refresh Protection Log">
+            <RefreshCw size={16} /> Refresh
+          </button>
+          <button className="btn-export" onClick={handleExport} title="Download Audit Certificate">
+            <Download size={18} /> Export Audit Log
+          </button>
+        </div>
       </div>
 
       <div className="logs-summary-strip">
         <div className="logs-summary-bar">
           <Shield size={26} color="var(--brand-primary)" />
           <div>
-            <span>Today:</span> <b>47</b> allowed actions &nbsp; &nbsp; <b style={{color: '#4C8C56'}}>0</b> blocked attempts &nbsp; &nbsp; <b style={{color: '#4C8C56'}}>0</b> cross-case access leaks
+            <span>Audit Summary:</span> <b>{summary.total_allowed || logs.filter(l => l.action === 'ALLOW').length}</b> allowed actions &nbsp; &nbsp; <b style={{ color: '#c0392b' }}>{summary.total_denied || logs.filter(l => l.action === 'DENY').length}</b> blocked violations &nbsp; &nbsp; <b style={{ color: '#4C8C56' }}>0</b> cross-case data leaks
           </div>
         </div>
 
         <div className="floating-widget">
           <div className="pdf-icon-placeholder">PDF</div>
           <div className="widget-text">
-            <div className="widget-title">Data Protection Record - Chen Case</div>
-            <div className="widget-sub">0 cross-case access attempts during this matter</div>
+            <div className="widget-title">Beaverly OpenShell Compliance Certificate</div>
+            <div className="widget-sub">Zero data leakage across active matter sandboxes</div>
           </div>
         </div>
       </div>
 
       <div className="timeline-container">
         <div className="timeline-line"></div>
-        {records.map(r => (
-          <div key={r.id} className="timeline-row">
-            <div className="timeline-time">
-              <span className="timeline-time-clock">{r.time}</span>
-              <span>{r.date}</span>
-            </div>
-            <div className={`timeline-dot ${r.status === 'allowed' ? 'green' : 'red'}`}></div>
-            <div className={`timeline-card ${r.status}`}>
-              <div className={`card-icon ${r.status === 'allowed' ? 'green' : 'red'}`}>
-                {r.status === 'allowed' ? <Check size={20} strokeWidth={3} /> : <ShieldAlert size={20} strokeWidth={2.5} />}
+        {logs.map((r, i) => {
+          const { time, date } = formatTime(r.timestamp);
+          const isAllowed = r.action === 'ALLOW';
+          return (
+            <div key={r.id || i} className="timeline-row">
+              <div className="timeline-time">
+                <span className="timeline-time-clock">{time}</span>
+                <span>{date}</span>
               </div>
-              <div className="card-content">
-                <div className="card-title">{r.title}</div>
-                <div className="card-subtext">{r.sub}</div>
+              <div className={`timeline-dot ${isAllowed ? 'green' : 'red'}`}></div>
+              <div className={`timeline-card ${isAllowed ? 'allowed' : 'blocked'}`}>
+                <div className={`card-icon ${isAllowed ? 'green' : 'red'}`}>
+                  {isAllowed ? <Check size={20} strokeWidth={3} /> : <ShieldAlert size={20} strokeWidth={2.5} />}
+                </div>
+                <div className="card-content">
+                  <div className="card-title">
+                    {isAllowed ? `Allowed: ${r.resource}` : `Blocked: OpenShell eBPF Denied ${r.resource}`}
+                  </div>
+                  <div className="card-subtext">
+                    Case: <b>{r.case_id}</b> • Agent: {r.agent || 'Hermes Agent'} • Reason: {r.reason || (isAllowed ? 'Authorized same-case access' : 'Cross-tenant sandbox violation')}
+                  </div>
+                </div>
               </div>
             </div>
+          );
+        })}
+        {logs.length === 0 && !loading && (
+          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+            No protection logs recorded yet.
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

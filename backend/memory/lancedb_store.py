@@ -1,4 +1,4 @@
-﻿"""
+"""
 Beaverly - LanceDB Vector Store
 Per-case document embeddings for RAG retrieval.
 """
@@ -16,7 +16,7 @@ SCHEMA = pa.schema([
     pa.field("doc_name",  pa.string()),
     pa.field("page",      pa.int32()),
     pa.field("chunk",     pa.string()),
-    pa.field("vector",    pa.list_(pa.float32(), 768)),  # BGE embedding dim
+    pa.field("vector",    pa.list_(pa.float32(), 4096)),  # Qwen embedding dim (4096)
 ])
 
 

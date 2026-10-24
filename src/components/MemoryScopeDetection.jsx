@@ -95,7 +95,7 @@ export default function MemoryScopeDetection({
       setCaseBResponse({
         query: caseBQuery,
         answer: "I don't have that information in this case.",
-        explanation: "Belaw's Memory Scope Detection tagged 'ABC Holdings' specifically to Matter #2025-089A (Case A). In Matter #2025-104B (Case B), that memory is completely invisible and unretrievable.",
+        explanation: "Beaverly's Memory Scope Detection tagged 'ABC Holdings' specifically to Matter #2025-089A (Case A). In Matter #2025-104B (Case B), that memory is completely invisible and unretrievable.",
         caseId: 'case-b',
         timestamp: 'Just now'
       });
@@ -132,7 +132,7 @@ export default function MemoryScopeDetection({
               Memory Scope Detection
             </h1>
             <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-              <strong>What it does:</strong> When a lawyer corrects AI, Belaw determines whether the correction contains case-specific information (client name, company name, case number). If yes, it asks: <em>"Global memory or this case only?"</em>
+              <strong>What it does:</strong> When a lawyer corrects AI, Beaverly determines whether the correction contains case-specific information (client name, company name, case number). If yes, it asks: <em>"Global memory or this case only?"</em>
             </p>
           </div>
 
@@ -179,7 +179,7 @@ export default function MemoryScopeDetection({
             </div>
 
             <p className="text-xs text-[var(--text-secondary)]">
-              Simulate lawyer providing an edit containing a company name to test if Belaw identifies it as case-specific.
+              Simulate lawyer providing an edit containing a company name to test if Beaverly identifies it as case-specific.
             </p>
 
             {/* Input box */}
@@ -235,13 +235,13 @@ export default function MemoryScopeDetection({
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-[var(--cream-100)] border border-[var(--primary)] flex-shrink-0">
                     <img 
                       src="/assets/mascot.png" 
-                      alt="Belaw Mascot" 
+                      alt="Barry the Beaver" 
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div>
                     <h4 className="font-serif font-bold text-sm text-[var(--text-primary)]">
-                      Belaw asks: Save to Case A only, or Global memory?
+                      Beaverly asks: Save to Case A only, or Global memory?
                     </h4>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
                       "ABC Holdings" was identified as a case-specific party name. Would you like this preference saved strictly for <strong>{currentCase.shortName}</strong>, or saved as a global firm rule?
@@ -318,7 +318,7 @@ export default function MemoryScopeDetection({
                   type="text"
                   value={caseBQuery}
                   onChange={(e) => setCaseBQuery(e.target.value)}
-                  placeholder="Ask Belaw in Case B..."
+                  placeholder="Ask Beaverly in Case B..."
                   className="flex-1 px-3 py-2 rounded-lg bg-[var(--cream-100)] border border-[var(--border-strong)] text-xs text-[var(--text-primary)] font-mono focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
                 />
                 <button
@@ -327,26 +327,26 @@ export default function MemoryScopeDetection({
                   className="btn-primary text-xs flex items-center gap-1.5"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  Ask Belaw in Case B
+                  Ask Beaverly in Case B
                 </button>
               </div>
             </form>
 
-            {/* Simulated Belaw Chat Response */}
+            {/* Simulated Beaverly Chat Response */}
             {caseBResponse && (
               <div className="mt-4 p-4 rounded-xl bg-[var(--white)] border border-[var(--border-strong)] shadow-xs space-y-3 animate-fadeIn">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-[var(--cream-100)] border border-[var(--primary)] flex-shrink-0">
                     <img 
                       src="/assets/mascot.png" 
-                      alt="Belaw Mascot" 
+                      alt="Barry the Beaver" 
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-xs text-[var(--text-primary)]">
-                        Belaw Legal Assistant
+                        Beaverly Legal Assistant
                       </span>
                       <span className="text-[10px] font-mono text-[var(--text-muted)]">
                         Container: /sandboxes/matter-104b/
