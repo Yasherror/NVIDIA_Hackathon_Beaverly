@@ -70,3 +70,45 @@ async def close_case(case_id: str):
         )
         await db.commit()
     return {"status": "closed", "closed_at": now_iso}
+
+class CaseUpdate(BaseModel):
+    client_name: str | None = None
+    opponent: str | None = None
+    short_name: str | None = None
+    jurisdiction: str | None = None
+    practice_area: str | None = None
+    lead_counsel: str | None = None
+    description: str | None = None
+
+@router.patch("/{case_id}")
+async def update_case(case_id: str, data: CaseUpdate):
+    """Update case details (short_name, client_name, opponent, jurisdiction, etc.)."""
+    update_data = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+    if not update_data:
+        return {"status": "no_changes"}
+
+    fields = [f"{k} = ?" for k in update_data.keys()]
+    values = list(update_data.values())
+    values.append(case_id)
+
+    async with aiosqlite.connect(settings.db_path) as db:
+        async with db.execute("SELECT id, status FROM cases WHERE id = ?", (case_id,)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                raise HTTPException(404, "Case not found")
+            if row[1] == "closed":
+                raise HTTPException(400, "Closed cases are archived and cannot be edited")
+        
+        query = f"UPDATE cases SET {', '.join(fields)} WHERE id = ?"
+        await db.execute(query, values)
+        
+        # Log case update to protection_logs
+        await db.execute(
+            """INSERT INTO protection_logs (case_id, action, resource, reason, agent)
+               VALUES (?, 'ALLOW', ?, ?, 'Matter Management')""",
+            (case_id, f"case/{case_id}/metadata", f"Updated case metadata: {', '.join(update_data.keys())}")
+        )
+        await db.commit()
+
+    return {"status": "updated", "id": case_id, "updated_fields": list(update_data.keys())}
+

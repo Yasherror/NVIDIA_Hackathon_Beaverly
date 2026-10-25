@@ -7,8 +7,9 @@ import {
   MessageSquare, Folder, ChevronDown, ChevronRight, Lock, Sparkles, 
   Paperclip, Send, AlertTriangle, AlertCircle, User, 
   Loader2, ShieldCheck, Plus, Trash2, PanelLeftClose, PanelLeftOpen,
-  CheckCircle2, ShieldAlert, Clock, Download
+  CheckCircle2, ShieldAlert, Clock, Download, Copy
 } from 'lucide-react';
+import PreSubmissionStudio from '../components/PreSubmissionStudio';
 import './Chat.css';
 
 export default function Chat({ selectedCase, setSelectedCase }) {
@@ -41,6 +42,8 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [telemetry, setTelemetry] = useState(null);
+  const [isStudioOpen, setIsStudioOpen] = useState(false);
+  const [studioInitialDraft, setStudioInitialDraft] = useState('');
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -583,6 +586,19 @@ export default function Chat({ selectedCase, setSelectedCase }) {
             <span>{telemetry ? `${telemetry.latency_ms}ms` : 'ready'}</span>
             <span className="router-savings">{telemetry?.credit_efficiency || 'credit-optimized'}</span>
           </div>
+
+          <button 
+            className="btn-fact-check-studio"
+            onClick={() => {
+              setStudioInitialDraft('');
+              setIsStudioOpen(true);
+            }}
+            title="Open Pre-Submission Fact Verification Studio (PRD P0-4)"
+          >
+            <ShieldCheck size={16} color="var(--brand-primary)" />
+            <span>Fact Check Studio</span>
+            <span className="fact-check-p0-badge">P0-4</span>
+          </button>
         </div>
 
         {/* Demo controls removed from the product UI. */}
@@ -776,6 +792,19 @@ export default function Chat({ selectedCase, setSelectedCase }) {
                     Engine: {msg.engineNote}
                   </div>
                 )}
+                <div style={{ marginTop: 14 }}>
+                  <button
+                    className="belaw-btn-primary"
+                    style={{ fontSize: '0.84rem', padding: '7px 14px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    onClick={() => {
+                      setStudioInitialDraft(msg.originalDraft || "The executive agreement was terminated on 21 March 2025.");
+                      setIsStudioOpen(true);
+                    }}
+                  >
+                    <ShieldCheck size={15} />
+                    <span>Open in Fact Verification Studio & Fix Mismatches ↗</span>
+                  </button>
+                </div>
               </div>
             ) : msg.isSkill ? (
               <div key={idx} className="alert-banner warning" style={{ marginTop: 15, marginBottom: 15, padding: '16px', borderRadius: '12px', backgroundColor: '#fffbf0', border: '2px solid #e67e22' }}>
@@ -822,9 +851,34 @@ export default function Chat({ selectedCase, setSelectedCase }) {
                 )}
                 <div className={`msg-bubble ${msg.role === 'assistant' ? 'markdown-content' : ''}`}>
                   {msg.role === 'assistant' ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {msg.content}
-                    </ReactMarkdown>
+                    <>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.content}
+                      </ReactMarkdown>
+                      <div className="msg-actions-bar">
+                        <button 
+                          className="msg-action-btn"
+                          onClick={() => {
+                            setStudioInitialDraft(msg.content);
+                            setIsStudioOpen(true);
+                          }}
+                          title="Audit this draft in Pre-Submission Fact Verification Studio"
+                        >
+                          <ShieldCheck size={13} color="var(--brand-primary)" />
+                          <span>Audit in Studio</span>
+                        </button>
+                        <button 
+                          className="msg-action-btn"
+                          onClick={() => {
+                            navigator.clipboard.writeText(msg.content);
+                          }}
+                          title="Copy message content"
+                        >
+                          <Copy size={13} />
+                          <span>Copy</span>
+                        </button>
+                      </div>
+                    </>
                   ) : (
                     msg.content
                   )}
@@ -929,6 +983,17 @@ export default function Chat({ selectedCase, setSelectedCase }) {
           </div>
         </div>
       </div>
+
+      {/* Pre-Submission Fact Verification Studio Drawer/Modal (PRD P0-4) */}
+      <PreSubmissionStudio
+        isOpen={isStudioOpen}
+        onClose={() => setIsStudioOpen(false)}
+        activeCase={activeCase}
+        initialDraft={studioInitialDraft}
+        onSendToChat={(verifiedText) => {
+          setInput(verifiedText);
+        }}
+      />
     </div>
   );
 }

@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, FileText, Brain, ExternalLink, AlertTriangle, X, Trash2, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Lock, FileText, Brain, ExternalLink, AlertTriangle, X, Trash2, CheckCircle2, ShieldCheck, Edit3 } from 'lucide-react';
 import './Cases.css';
 
 export default function Cases({ setActiveTab, onOpenCase }) {
   const [caseToClose, setCaseToClose] = useState(null);
   const [showNewCaseModal, setShowNewCaseModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [fileObject, setFileObject] = useState(null);
 
   const [newCaseName, setNewCaseName] = useState('');
   const [clientName, setClientName] = useState('');
   const [opponentName, setOpponentName] = useState('');
   const [conflictResult, setConflictResult] = useState(null);
   
+  const [caseToEdit, setCaseToEdit] = useState(null);
+  const [editShortName, setEditShortName] = useState('');
+  const [editClientName, setEditClientName] = useState('');
+  const [editOpponent, setEditOpponent] = useState('');
+  const [editJurisdiction, setEditJurisdiction] = useState('');
+  const [editPracticeArea, setEditPracticeArea] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const [activeCases, setActiveCases] = useState([]);
 
   const fetchCases = async () => {
@@ -41,9 +50,53 @@ export default function Cases({ setActiveTab, onOpenCase }) {
     }
   };
 
+  const handleOpenEditModal = (c, e) => {
+    if (e) e.stopPropagation();
+    setCaseToEdit(c);
+    setEditShortName(c.short_name || '');
+    setEditClientName(c.client_name || '');
+    setEditOpponent(c.opponent || '');
+    setEditJurisdiction(c.jurisdiction || '');
+    setEditPracticeArea(c.practice_area || '');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!caseToEdit) return;
+    if (!editShortName.trim() && !editClientName.trim()) {
+      alert('Please provide a Case Name or Client Name');
+      return;
+    }
+    setIsUpdating(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/cases/${caseToEdit.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          short_name: editShortName.trim() || editClientName.trim(),
+          client_name: editClientName.trim() || 'Unknown Client',
+          opponent: editOpponent.trim(),
+          jurisdiction: editJurisdiction.trim(),
+          practice_area: editPracticeArea.trim()
+        })
+      });
+      if (res.ok) {
+        await fetchCases();
+        setCaseToEdit(null);
+      } else {
+        alert('Failed to update case details');
+      }
+    } catch (err) {
+      console.error('Error updating case:', err);
+      alert('Network error updating case');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0].name);
+      setFileObject(e.target.files[0]);
     }
   };
 
@@ -69,12 +122,27 @@ export default function Cases({ setActiveTab, onOpenCase }) {
         })
       });
       if (res.ok) {
+        const createdCase = await res.json();
+        // Ingest the initial document into LanceDB if user attached one
+        if (fileObject && createdCase?.id) {
+          const formData = new FormData();
+          formData.append('file', fileObject);
+          try {
+            await fetch(`http://localhost:8000/api/intelligence/cases/${createdCase.id}/documents`, {
+              method: 'POST',
+              body: formData
+            });
+          } catch (uploadErr) {
+            console.error('Document ingestion failed:', uploadErr);
+          }
+        }
         fetchCases();
         setShowNewCaseModal(false);
         setNewCaseName('');
         setClientName('');
         setOpponentName('');
         setSelectedFile(null);
+        setFileObject(null);
       }
     } catch (error) {
       console.error('Error creating case:', error);
@@ -173,7 +241,10 @@ export default function Cases({ setActiveTab, onOpenCase }) {
                   <div className="case-created-text">Created {formatDate(c.created_at)}</div>
                   <div className="case-buttons-row">
                     <button className="btn-open" onClick={() => handleOpen(c)}>Open</button>
-                    <button className="btn-close-case" onClick={() => setCaseToClose(c.id)}>Close Case</button>
+                    <button className="btn-edit-case" onClick={(e) => handleOpenEditModal(c, e)}>
+                      <Edit3 size={14} /> Edit
+                    </button>
+                    <button className="btn-close-case" onClick={() => setCaseToClose(c.id)}>Close</button>
                   </div>
                 </>
               )}
@@ -261,6 +332,81 @@ export default function Cases({ setActiveTab, onOpenCase }) {
             <div className="modal-footer">
               <button className="btn-outline" onClick={() => setShowNewCaseModal(false)}>Cancel</button>
               <button className="btn-filled" onClick={handleCreateCase}>Create Case</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {caseToEdit && (
+        <div className="modal-overlay" onClick={() => setCaseToEdit(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+                <Edit3 size={20} color="var(--brand-primary)" />
+                <h2>Edit Case Details</h2>
+              </div>
+              <X size={20} style={{cursor: 'pointer'}} onClick={() => setCaseToEdit(null)} />
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Case Name *</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Synergy Resources v. Holloway" 
+                  value={editShortName} 
+                  onChange={(e) => setEditShortName(e.target.value)} 
+                />
+                <div className="help-text">Display title used across chat, reports, and audit logs.</div>
+              </div>
+              <div className="form-group">
+                <label>Client Name *</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Ed Holloway" 
+                  value={editClientName} 
+                  onChange={(e) => setEditClientName(e.target.value)} 
+                />
+                <div className="help-text">Used for privacy masking, boundary controls, and privilege.</div>
+              </div>
+              <div className="form-group">
+                <label>Opposing Party (Optional)</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Synergy Resources Corp." 
+                  value={editOpponent} 
+                  onChange={(e) => setEditOpponent(e.target.value)} 
+                />
+              </div>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12}}>
+                <div className="form-group">
+                  <label>Jurisdiction (Optional)</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Colorado / Federal" 
+                    value={editJurisdiction} 
+                    onChange={(e) => setEditJurisdiction(e.target.value)} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Practice Area (Optional)</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Employment Law" 
+                    value={editPracticeArea} 
+                    onChange={(e) => setEditPracticeArea(e.target.value)} 
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-outline" onClick={() => setCaseToEdit(null)}>Cancel</button>
+              <button 
+                className="btn-filled" 
+                onClick={handleSaveEdit} 
+                disabled={isUpdating}
+              >
+                {isUpdating ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>

@@ -414,3 +414,74 @@
   background-color: var(--bg-surface-hover);
   border-radius: 0 6px 6px 0;
 }
+
+/* Pre-Submission Studio Entry Button in Header */
+.btn-fact-check-studio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-dark);
+  background: linear-gradient(135deg, var(--bg-surface), var(--bg-surface-alt));
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+
+.btn-fact-check-studio:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.fact-check-p0-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  background-color: #FDF3E7;
+  color: var(--brand-primary);
+  border: 1px solid var(--border-light);
+  letter-spacing: 0.04em;
+}
+
+/* Assistant message action bar */
+.msg-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+}
+
+.msg-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-light);
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.msg-action-btn:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
