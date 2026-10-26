@@ -134,7 +134,7 @@
   width: 100%;
 }
 
-.timeline-line { 
+.timeline-container .timeline-line { 
   position: absolute; 
   left: 110px; 
   top: 30px; 

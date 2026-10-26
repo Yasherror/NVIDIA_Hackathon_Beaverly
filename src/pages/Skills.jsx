@@ -409,17 +409,17 @@ export default function Skills() {
                   No historical snapshots recorded yet.
                 </div>
               ) : (
-                <div className="version-timeline">
+                <div className="vhist-timeline">
                   {versionsData.map((v, idx) => {
                     const isLatest = idx === 0;
                     return (
-                      <div key={v.id} className={`version-timeline-item ${isLatest ? 'current-active' : ''}`}>
-                        <div className="timeline-node">
-                          <span className="timeline-dot" />
-                          {idx < versionsData.length - 1 && <span className="timeline-line" />}
+                      <div key={v.id} className={`vhist-item ${isLatest ? 'current-active' : ''}`}>
+                        <div className="vhist-node">
+                          <span className="vhist-dot" />
+                          {idx < versionsData.length - 1 && <span className="vhist-connector-line" />}
                         </div>
-                        <div className="version-timeline-card">
-                          <div className="timeline-header">
+                        <div className="vhist-card">
+                          <div className="vhist-header">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span className={`version-num-pill ${isLatest ? 'latest' : ''}`}>
                                 v{v.version_number}
@@ -432,17 +432,17 @@ export default function Skills() {
                                 <span className="archived-tag">Archived Snapshot</span>
                               )}
                             </div>
-                            <span className="timeline-timestamp">
+                            <span className="vhist-timestamp">
                               <Clock size={12} style={{ display: 'inline', marginRight: 4 }} />
                               {v.created_at}
                             </span>
                           </div>
 
-                          <div className="timeline-reason">
+                          <div className="vhist-reason">
                             <b>Reason:</b> {v.change_reason || 'Habit evolved by lawyer'}
                           </div>
 
-                          <div className="timeline-diff-box">
+                          <div className="vhist-diff-box">
                             <div className="diff-row">
                               <span className="diff-label">Pattern:</span>
                               <code>"{v.trigger_pattern}"</code>
@@ -456,7 +456,7 @@ export default function Skills() {
                             </div>
                           </div>
 
-                          <div className="timeline-actions">
+                          <div className="vhist-actions">
                             {!isLatest && (
                               <button 
                                 className="btn-rollback"
