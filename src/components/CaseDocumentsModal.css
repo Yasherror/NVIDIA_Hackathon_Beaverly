@@ -687,31 +687,35 @@
 }
 
 .doc-reader-body {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #EFE8DE;
-  padding: 28px 24px 36px 24px;
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
 }
 
-/* Paper Sheet Layout */
+/* Paper Sheet Layout - Guaranteed to fully cover all text and footer on all monitors */
 .legal-page-sheet {
   background: #FFFFFF;
   border: 1px solid #E5D9CB;
   border-radius: 8px;
   width: 100%;
   max-width: 840px;
-  min-height: 520px;
-  padding: 44px 56px 32px 56px;
+  min-height: 560px;
+  height: auto;
+  flex-shrink: 0; /* CRITICAL: Prevents flex container from crushing the white paper sheet */
+  padding: 48px 56px 36px 56px;
   box-shadow: 0 6px 30px -4px rgba(50, 35, 20, 0.14), 0 1px 3px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
   position: relative;
   box-sizing: border-box;
-  margin-bottom: 20px;
+  margin: 0 auto 36px auto; /* Ensures clean 36px bottom margin so paper never touches pagination bar */
 }
 
 .legal-sheet-header-seal {
@@ -721,6 +725,7 @@
   border-bottom: 2px solid #20332A;
   padding-bottom: 12px;
   margin-bottom: 24px;
+  flex-shrink: 0;
 }
 
 .legal-sheet-title-stamp {
@@ -750,6 +755,7 @@
   margin-bottom: 16px;
   border-left: 3px solid var(--brand-primary, #B37552);
   padding-left: 12px;
+  flex-shrink: 0;
 }
 
 .legal-sheet-text {
@@ -759,13 +765,13 @@
   color: #242926;
   white-space: pre-wrap;
   word-break: break-word;
-  flex: 1;
-  margin-bottom: 24px;
+  flex: 1 0 auto; /* Grows naturally with text, never compresses child content */
+  margin-bottom: 32px;
 }
 
 .legal-sheet-footer-bar {
   margin-top: auto;
-  padding-top: 14px;
+  padding-top: 16px;
   border-top: 1px solid #EBE2D5;
   display: flex;
   justify-content: space-between;
@@ -774,6 +780,7 @@
   color: #8C9991;
   font-family: monospace;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .legal-sheet-footer-left {
@@ -822,6 +829,40 @@
   justify-content: space-between;
   flex-shrink: 0;
   box-shadow: 0 -4px 16px rgba(0,0,0,0.03);
+  z-index: 10;
+}
+
+/* Multi-monitor responsive adjustments */
+@media (max-height: 850px) {
+  .doc-reader-container {
+    height: 96vh;
+  }
+  .doc-reader-header {
+    padding: 10px 20px;
+  }
+  .doc-reader-body {
+    padding: 20px 16px 28px 16px;
+  }
+  .legal-page-sheet {
+    padding: 36px 44px 28px 44px;
+    min-height: 480px;
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 1150px) {
+  .doc-reader-container {
+    width: 96vw;
+  }
+  .doc-reader-header-left {
+    max-width: 380px;
+  }
+  .doc-reader-header-title {
+    max-width: 280px;
+  }
+  .legal-page-sheet {
+    padding: 36px 40px;
+  }
 }
 
 .pager-status-pill {
