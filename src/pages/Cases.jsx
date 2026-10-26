@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, FileText, Brain, ExternalLink, AlertTriangle, X, Trash2, CheckCircle2, ShieldCheck, Edit3 } from 'lucide-react';
+import CaseDocumentsModal from '../components/CaseDocumentsModal';
 import './Cases.css';
 
 export default function Cases({ setActiveTab, onOpenCase }) {
@@ -20,6 +21,7 @@ export default function Cases({ setActiveTab, onOpenCase }) {
   const [editJurisdiction, setEditJurisdiction] = useState('');
   const [editPracticeArea, setEditPracticeArea] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [docViewingCase, setDocViewingCase] = useState(null);
 
   const [activeCases, setActiveCases] = useState([]);
 
@@ -209,7 +211,15 @@ export default function Cases({ setActiveTab, onOpenCase }) {
             </div>
 
             <div className="case-stats">
-              <div className="case-stat-item">
+              <div 
+                className="case-stat-item case-stat-clickable"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDocViewingCase(c);
+                }}
+                title="Click to inspect sandboxed documents"
+                style={{ cursor: 'pointer' }}
+              >
                 <FileText size={18} color="var(--brand-primary)" strokeWidth={2} /> {c.files_count || 0} files
               </div>
               <div className="case-stat-item">
@@ -411,6 +421,19 @@ export default function Cases({ setActiveTab, onOpenCase }) {
           </div>
         </div>
       )}
+
+      {/* Case Documents Sandbox Modal */}
+      <CaseDocumentsModal
+        isOpen={!!docViewingCase}
+        onClose={() => setDocViewingCase(null)}
+        activeCase={docViewingCase}
+        onSelectDocumentForChat={(prompt) => {
+          if (onOpenCase && docViewingCase) {
+            onOpenCase(docViewingCase);
+          }
+        }}
+        onRefreshCase={fetchCases}
+      />
     </div>
   );
 }

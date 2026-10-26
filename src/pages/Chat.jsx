@@ -8,9 +8,11 @@ import {
   Paperclip, Send, AlertTriangle, AlertCircle, User, 
   Loader2, ShieldCheck, Plus, Trash2, PanelLeftClose, PanelLeftOpen,
   PanelRightClose, PanelRightOpen, Search,
-  CheckCircle2, ShieldAlert, Clock, Download, Copy, Edit3, Globe, X, Wand2
+  CheckCircle2, ShieldAlert, Clock, Download, Copy, Edit3, Globe, X, Wand2,
+  FolderOpen
 } from 'lucide-react';
 import PreSubmissionStudio from '../components/PreSubmissionStudio';
+import CaseDocumentsModal from '../components/CaseDocumentsModal';
 import './Chat.css';
 
 const REASONING_PHASES = [
@@ -28,6 +30,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   const [showCaseDropdown, setShowCaseDropdown] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMemoryOpen, setIsMemoryOpen] = useState(true);
+  const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close case dropdown on outside click
@@ -822,6 +825,15 @@ export default function Chat({ selectedCase, setSelectedCase }) {
             </div>
 
             <button 
+              className="btn-case-files-header"
+              onClick={() => setIsDocumentsModalOpen(true)}
+              title="Open Case Documents Sandbox"
+            >
+              <FolderOpen size={14} />
+              <span>Files ({activeCase?.files_count || 0})</span>
+            </button>
+
+            <button 
               className="btn-fact-check-studio"
               onClick={() => {
                 setStudioInitialDraft('');
@@ -1299,9 +1311,24 @@ export default function Chat({ selectedCase, setSelectedCase }) {
               <span className="mem-pill">Opponent: {activeCase.opponent}</span>
             )}
             <span className="mem-pill">Jurisdiction: {activeCase?.jurisdiction || 'Default'}</span>
-            <span className="mem-pill">Files: {activeCase?.files_count || 12} documents</span>
+            <span 
+              className="mem-pill clickable-file-pill"
+              onClick={() => setIsDocumentsModalOpen(true)}
+              title="Click to inspect and manage sandbox documents"
+            >
+              <FolderOpen size={12} style={{ marginRight: 4, display: 'inline', verticalAlign: 'text-bottom' }} />
+              Files: {activeCase?.files_count || 0} documents
+            </span>
             <span className="mem-pill">Status: {activeCase?.status === 'closed' ? 'Closed (Purged)' : 'Active (Sandboxed)'}</span>
           </div>
+
+          <button 
+            className="btn-open-case-files"
+            onClick={() => setIsDocumentsModalOpen(true)}
+          >
+            <FolderOpen size={14} />
+            <span>Manage Case Documents</span>
+          </button>
         </div>
       </div>
 
@@ -1406,6 +1433,17 @@ export default function Chat({ selectedCase, setSelectedCase }) {
           </div>
         </div>
       )}
+
+      {/* Case Documents Sandbox Modal */}
+      <CaseDocumentsModal
+        isOpen={isDocumentsModalOpen}
+        onClose={() => setIsDocumentsModalOpen(false)}
+        activeCase={activeCase}
+        onSelectDocumentForChat={(prompt) => setInput(prompt)}
+        onRefreshCase={() => {
+          fetchCases();
+        }}
+      />
     </div>
   );
 }

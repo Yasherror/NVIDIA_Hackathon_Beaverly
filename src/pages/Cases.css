@@ -20,6 +20,8 @@
 
 .case-stats { display: flex; align-items: center; gap: 24px; color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 32px; }
 .case-stat-item { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.case-stat-clickable { padding: 4px 8px; margin-left: -8px; border-radius: var(--radius-sm); transition: all var(--transition-fast); }
+.case-stat-clickable:hover { background: rgba(179, 117, 82, 0.1); color: var(--brand-primary); }
 
 .case-divider { border-top: 1px solid var(--border-light); margin-bottom: 16px; }
 
