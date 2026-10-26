@@ -267,11 +267,27 @@
   flex: 1; 
   min-width: 0;
 }
-.conv-folder-title > span {
+
+.conv-folder-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+  min-width: 0;
+}
+
+.conv-closed-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #6E685F;
+  background-color: #EAE5DC;
+  border: 1px solid #D8D1C3;
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .conv-folder-right-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }

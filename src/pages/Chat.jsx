@@ -688,11 +688,11 @@ export default function Chat({ selectedCase, setSelectedCase }) {
                   >
                     <div className="conv-folder-title">
                       <Folder size={17} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
-                      <span style={{ fontWeight: isCurrent ? 700 : 600 }}>
+                      <span className="conv-folder-name" style={{ fontWeight: isCurrent ? 700 : 600 }} title={c.short_name || c.client_name}>
                         {c.short_name || c.client_name}
                       </span>
                       {c.status === 'closed' && (
-                        <span className="status-pill closed" style={{ fontSize: '0.65rem', padding: '1px 6px', flexShrink: 0 }}>
+                        <span className="conv-closed-badge">
                           Closed
                         </span>
                       )}
@@ -795,7 +795,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
                     >
                       <span>{c.short_name || c.client_name}</span>
                       {c.status === 'closed' && (
-                        <span className="status-pill closed" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                        <span className="conv-closed-badge">
                           Closed
                         </span>
                       )}
