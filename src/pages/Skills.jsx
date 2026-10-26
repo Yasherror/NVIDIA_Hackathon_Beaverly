@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '../api/apiClient';
 import { useAppContext } from '../context/AppContext';
+import beaverFenceDivider from '../assets/beaver_fence_divider.png';
 import './Skills.css';
 
 export default function Skills() {
@@ -269,13 +270,21 @@ export default function Skills() {
         </div>
       </div>
 
-      <div className="skills-divider">
-        <img 
-          src="/assets/mascot.png" 
-          alt="Barry the Beaver fence" 
-          style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--bg-app)' }} 
-          onError={(e) => { e.target.src = '/src/assets/belawbeaver.jpg'; }}
-        />
+      <div className="skills-divider-section">
+        <div className="skills-divider-line"></div>
+        <div className="skills-divider-center" title="OpenShell Cryptographic Memory Isolation Boundary">
+          <img 
+            src={beaverFenceDivider} 
+            alt="Beaverly Memory Fence Isolation" 
+            className="skills-fence-divider-img"
+            onError={(e) => { e.target.src = '/assets/beaver_fence_divider.png'; }}
+          />
+          <div className="skills-divider-tag">
+            <Lock size={11} />
+            <span>OPENSHELL CRYPTOGRAPHIC ISOLATION BOUNDARY</span>
+          </div>
+        </div>
+        <div className="skills-divider-line"></div>
       </div>
 
       {/* Case-Specific Memory Section */}

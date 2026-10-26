@@ -819,10 +819,25 @@
 
 .fence-divider { 
   display: flex; 
+  flex-direction: column;
   align-items: center; 
   justify-content: center; 
-  margin: -6px 0; 
-  opacity: 0.8; 
+  margin: 6px 0; 
+  width: 100%;
+}
+
+.fence-divider-img {
+  width: 100%;
+  max-width: 195px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(60, 40, 20, 0.12));
+  transition: transform 0.22s ease;
+  user-select: none;
+}
+
+.fence-divider-img:hover {
+  transform: scale(1.04);
 }
 
 

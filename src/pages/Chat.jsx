@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import PreSubmissionStudio from '../components/PreSubmissionStudio';
 import CaseDocumentsModal from '../components/CaseDocumentsModal';
+import beaverFenceDivider from '../assets/beaver_fence_divider.png';
 import './Chat.css';
 
 const REASONING_PHASES = [
@@ -1288,12 +1289,12 @@ export default function Chat({ selectedCase, setSelectedCase }) {
           </div>
         </div>
 
-        <div className="fence-divider">
+        <div className="fence-divider" title="OpenShell Strict Memory Isolation Barrier">
           <img 
-            src="/assets/mascot.png" 
-            alt="Barry the Beaver fence" 
-            style={{ width: 54, height: 54, borderRadius: '50%', border: '4px solid var(--bg-app)', objectFit: 'cover' }} 
-            onError={(e) => { e.target.src = '/src/assets/belawbeaver.jpg'; }}
+            src={beaverFenceDivider} 
+            alt="Beaverly Memory Fence Isolation" 
+            className="fence-divider-img"
+            onError={(e) => { e.target.src = '/assets/beaver_fence_divider.png'; }}
           />
         </div>
 
