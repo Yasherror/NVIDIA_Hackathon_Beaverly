@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     db_path: str = "./db/beaverly.db"
     lancedb_path: str = "./db/lancedb"
     uploads_path: str = "./uploads"
+    sandboxes_path: str = "./sandboxes"
+
 
     # Security
     secret_key: str = "dev-secret-change-in-production"

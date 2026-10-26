@@ -103,6 +103,25 @@ async def init_db():
             )
         """)
 
+        # Matter documents catalog: records all sandboxed files, chunk counts and isolation status in SQLite
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS case_documents (
+                id TEXT PRIMARY KEY,
+                case_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                file_type TEXT DEFAULT 'pdf',
+                size_human TEXT DEFAULT '1.2 MB',
+                pages_count INTEGER DEFAULT 1,
+                chunks_count INTEGER DEFAULT 1,
+                sandbox_path TEXT,
+                privilege TEXT DEFAULT 'Confidential - Attorney-Client Protected',
+                status TEXT DEFAULT 'Indexed in LanceDB',
+                sample_snippet TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (case_id) REFERENCES cases(id)
+            )
+        """)
+
         # Seed sample cases if active cases are missing
         async with db.execute("SELECT COUNT(*) FROM cases WHERE status='active'") as cur:
             active_count = (await cur.fetchone())[0]
@@ -167,6 +186,27 @@ async def init_db():
             FROM skills s
             WHERE NOT EXISTS (SELECT 1 FROM skill_versions sv WHERE sv.skill_id = s.id)
         """)
+
+        # Seed case_documents if empty
+        async with db.execute("SELECT COUNT(*) FROM case_documents") as cur:
+            docs_count = (await cur.fetchone())[0]
+            if docs_count == 0:
+                await db.execute("""
+                    INSERT OR REPLACE INTO case_documents (id, case_id, name, file_type, size_human, pages_count, chunks_count, sandbox_path, privilege, status, sample_snippet)
+                    VALUES 
+                    ('doc-8b0-1', 'case-8b0bb87e', 'Synergy_Resources_Employment_Agreement.pdf', 'pdf', '1.2 MB', 8, 44, '/sandboxes/case-8b0bb87e/Synergy_Resources_Employment_Agreement.pdf', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'EXHIBIT 10.1 EMPLOYMENT AGREEMENT between Synergy Resources Corporation and Executive. Full non-disclosure and severance protection clauses.'),
+                    ('doc-8b0-2', 'case-8b0bb87e', 'Law_Insider_synergy-resources-corp_exhibit-101-employment-agreement-agreement-effective-as-of-june-1-2013-between-synergy-resources_Filed_07-06-2013_Contract.pdf', 'pdf', '1.2 MB', 8, 44, '/sandboxes/case-8b0bb87e/Law_Insider_Contract.pdf', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'EXHIBIT 10.1 EMPLOYMENT AGREEMENT effective as of June 1, 2013 between Synergy Resources and Executive.'),
+                    ('doc-8b0-3', 'case-8b0bb87e', 'Executive_Employment_Agreement_Final.pdf', 'pdf', '1.4 MB', 7, 32, '/sandboxes/case-8b0bb87e/Executive_Employment_Agreement_Final.pdf', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'Executive employment terms, compensation covenants, base salary schedule, and termination notice requirements.'),
+                    ('doc-8b0-4', 'case-8b0bb87e', 'Board_Resolution_Minutes_Signed.docx', 'docx', '0.6 MB', 4, 18, '/sandboxes/case-8b0bb87e/Board_Resolution_Minutes_Signed.docx', 'Privileged - Litigation Work Product', 'Indexed in LanceDB', 'Unanimous written consent of the Board of Directors approving executive employment agreement.'),
+                    ('doc-8b0-5', 'case-8b0bb87e', 'Non_Disclosure_and_Proprietary_Rights.pdf', 'pdf', '0.9 MB', 5, 22, '/sandboxes/case-8b0bb87e/Non_Disclosure_and_Proprietary_Rights.pdf', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'Comprehensive proprietary information, assignment of inventions, and restrictive covenant agreement.'),
+                    ('doc-8b0-6', 'case-8b0bb87e', 'Executive_Severance_and_Change_in_Control_Plan.pdf', 'pdf', '1.8 MB', 12, 48, '/sandboxes/case-8b0bb87e/Executive_Severance_Plan.pdf', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'Tier-1 executive severance policy and change-of-control golden parachute acceleration provisions.'),
+                    ('doc-8b0-7', 'case-8b0bb87e', 'Stock_Option_Grant_and_Vesting_Schedule.pdf', 'pdf', '0.8 MB', 4, 16, '/sandboxes/case-8b0bb87e/Stock_Option_Grant.pdf', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'Incentive stock option award agreement with standard 4-year graded vesting schedule.'),
+                    ('doc-chen-1', 'case-chen-001', 'Executive_Employment_Agreement_David_Chen.docx', 'docx', '1.1 MB', 6, 24, '/sandboxes/case-chen-001/Executive_Employment_Agreement.docx', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'Executive employment agreement of David Chen with MegaTech Asia Corp.'),
+                    ('doc-chen-2', 'case-chen-001', 'Non_Compete_and_Restrictive_Covenants.pdf', 'pdf', '0.8 MB', 4, 16, '/sandboxes/case-chen-001/Non_Compete.pdf', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', '24-month post-employment restrictive covenant and non-solicitation scope.'),
+                    ('doc-chen-3', 'case-chen-001', 'Severance_and_Notice_Period_Addendum.pdf', 'pdf', '0.5 MB', 3, 12, '/sandboxes/case-chen-001/Severance_Addendum.pdf', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'Notice period compliance terms and severance payment computation schedule.'),
+                    ('doc-chen-4', 'case-chen-001', 'MegaTech_Dispute_Correspondence.pdf', 'pdf', '0.7 MB', 5, 20, '/sandboxes/case-chen-001/MegaTech_Dispute.pdf', 'Privileged - Litigation Work Product', 'Indexed in LanceDB', 'Formal letters of demand and dispute correspondence regarding unpaid severance.'),
+                    ('doc-chen-5', 'case-chen-001', 'Arbitration_Notice_SIAC.pdf', 'pdf', '0.4 MB', 3, 10, '/sandboxes/case-chen-001/SIAC_Notice.pdf', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'Notice of Arbitration filed with Singapore International Arbitration Centre.')
+                """)
 
         await db.commit()
     logger.info(f"SQLite DB initialized and primed at {DB_PATH}")

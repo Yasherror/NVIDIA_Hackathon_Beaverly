@@ -15,7 +15,8 @@ import {
   Database, 
   Lock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import './CaseDocumentsModal.css';
 
@@ -341,6 +342,18 @@ export default function CaseDocumentsModal({
                             <span>Ask AI</span>
                           </button>
                         )}
+                        <a 
+                          href={`http://localhost:8000/api/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(doc.name)}/download`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="case-doc-btn"
+                          title="Download or view raw file from case sandbox"
+                          download={doc.name}
+                          style={{ textDecoration: 'none' }}
+                        >
+                          <Download size={13} />
+                          <span>Download</span>
+                        </a>
                         <button 
                           className="case-doc-btn danger"
                           onClick={() => handleDelete(doc.name)}
