@@ -7,7 +7,7 @@ import {
   MessageSquare, Folder, ChevronDown, ChevronRight, Lock, Sparkles, 
   Paperclip, Send, AlertTriangle, AlertCircle, User, 
   Loader2, ShieldCheck, Plus, Trash2, PanelLeftClose, PanelLeftOpen,
-  PanelRightClose, PanelRightOpen,
+  PanelRightClose, PanelRightOpen, Search,
   CheckCircle2, ShieldAlert, Clock, Download, Copy, Edit3, Globe, X, Wand2
 } from 'lucide-react';
 import PreSubmissionStudio from '../components/PreSubmissionStudio';
@@ -48,6 +48,59 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   const [threadsByCase, setThreadsByCase] = useState({});
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [expandedCaseIds, setExpandedCaseIds] = useState(new Set());
+  const [caseSearchQuery, setCaseSearchQuery] = useState('');
+  const [caseFilterStatus, setCaseFilterStatus] = useState('all'); // 'all' | 'active' | 'closed'
+
+  const getCaseThreads = (caseId) => {
+    if (!caseId) return [];
+    if (threadsByCase[caseId] && threadsByCase[caseId].length > 0) {
+      return threadsByCase[caseId];
+    }
+    return [
+      { id: `${caseId}-t1`, title: 'Consultation & Drafting', time: 'Active Session', messages: [] },
+      { id: `${caseId}-t2`, title: 'Evidence & Claims Review', time: 'Matter Notes', messages: [] }
+    ];
+  };
+
+  const activeCasesCount = casesList.filter(c => c.status !== 'closed').length;
+  const closedCasesCount = casesList.filter(c => c.status === 'closed').length;
+
+  const filteredCases = casesList.filter(c => {
+    // 1. Status Filter
+    if (caseFilterStatus === 'active' && c.status === 'closed') return false;
+    if (caseFilterStatus === 'closed' && c.status !== 'closed') return false;
+
+    // 2. Search Query Filter
+    if (!caseSearchQuery.trim()) return true;
+    const q = caseSearchQuery.toLowerCase().trim();
+    const nameMatch = (c.short_name || '').toLowerCase().includes(q) || (c.client_name || '').toLowerCase().includes(q);
+    const matterMatch = (c.matter_id || '').toLowerCase().includes(q);
+    const opponentMatch = (c.opponent || '').toLowerCase().includes(q);
+    const jurisdictionMatch = (c.jurisdiction || '').toLowerCase().includes(q);
+    
+    // Check if any thread title matches
+    const threads = threadsByCase[c.id] || getCaseThreads(c.id);
+    const threadMatch = threads.some(t => (t.title || '').toLowerCase().includes(q));
+
+    return nameMatch || matterMatch || opponentMatch || jurisdictionMatch || threadMatch;
+  });
+
+  // Automatically expand matching cases when searching
+  useEffect(() => {
+    if (caseSearchQuery.trim()) {
+      const q = caseSearchQuery.toLowerCase().trim();
+      const matchedIds = casesList.filter(c => {
+        const nameMatch = (c.short_name || '').toLowerCase().includes(q) || (c.client_name || '').toLowerCase().includes(q);
+        const matterMatch = (c.matter_id || '').toLowerCase().includes(q);
+        const opponentMatch = (c.opponent || '').toLowerCase().includes(q);
+        const jurisdictionMatch = (c.jurisdiction || '').toLowerCase().includes(q);
+        const threads = threadsByCase[c.id] || getCaseThreads(c.id);
+        const threadMatch = threads.some(t => (t.title || '').toLowerCase().includes(q));
+        return nameMatch || matterMatch || opponentMatch || jurisdictionMatch || threadMatch;
+      }).map(c => c.id);
+      setExpandedCaseIds(prev => new Set([...prev, ...matchedIds]));
+    }
+  }, [caseSearchQuery]);
 
   // Automatically expand active case when loaded or switched
   useEffect(() => {
@@ -95,17 +148,6 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   const [isAnalyzingSkill, setIsAnalyzingSkill] = useState(false);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
-
-  const getCaseThreads = (caseId) => {
-    if (!caseId) return [];
-    if (threadsByCase[caseId] && threadsByCase[caseId].length > 0) {
-      return threadsByCase[caseId];
-    }
-    return [
-      { id: `${caseId}-t1`, title: 'Consultation & Drafting', time: 'Active Session', messages: [] },
-      { id: `${caseId}-t2`, title: 'Evidence & Claims Review', time: 'Matter Notes', messages: [] }
-    ];
-  };
 
   const currentCaseThreads = activeCase ? (threadsByCase[activeCase.id] || getCaseThreads(activeCase.id)) : [];
   const currentThread = currentCaseThreads.find(t => t.id === activeThreadId) || currentCaseThreads[0] || null;
@@ -560,101 +602,164 @@ export default function Chat({ selectedCase, setSelectedCase }) {
           </div>
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
-          {casesList.map(c => {
-            const isCurrent = activeCase?.id === c.id;
-            const isExpanded = expandedCaseIds.has(c.id);
-            const threads = isCurrent ? currentCaseThreads : (threadsByCase[c.id] || getCaseThreads(c.id));
+        {/* Search & Status Filters */}
+        <div className="conv-search-container">
+          <div className="conv-search-box">
+            <Search size={14} className="conv-search-icon" />
+            <input 
+              type="text"
+              placeholder="Search matters, clients, #id..."
+              value={caseSearchQuery}
+              onChange={(e) => setCaseSearchQuery(e.target.value)}
+              className="conv-search-input"
+            />
+            {caseSearchQuery && (
+              <button 
+                className="btn-clear-search" 
+                onClick={() => setCaseSearchQuery('')}
+                title="Clear search"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
 
-            return (
-              <div key={c.id} className="conv-folder">
-                <div 
-                  className={`conv-folder-header ${isCurrent ? 'active-case-header' : ''}`}
-                  onClick={() => {
-                    handleSelectCase(c);
-                    if (isCurrent) {
-                      toggleCaseFolder(c.id);
-                    }
-                  }}
-                  style={{
-                    backgroundColor: isCurrent ? 'var(--bg-surface-hover)' : 'transparent',
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-md)'
-                  }}
-                >
-                  <div className="conv-folder-title">
-                    <Folder size={17} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
-                    <span style={{ fontWeight: isCurrent ? 700 : 600 }}>
-                      {c.short_name || c.client_name}
-                    </span>
-                    {c.status === 'closed' && (
-                      <span className="status-pill closed" style={{ fontSize: '0.65rem', padding: '1px 6px', flexShrink: 0 }}>
-                        Closed
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="conv-folder-right-actions">
-                    <button 
-                      className="btn-folder-add-thread" 
-                      onClick={(e) => handleCreateNewThread(c.id, e)}
-                      title={`New conversation for ${c.short_name || c.client_name}`}
-                    >
-                      <Plus size={14} />
-                    </button>
-                    <button 
-                      className="btn-folder-chevron" 
-                      onClick={(e) => toggleCaseFolder(c.id, e)}
-                      title={isExpanded ? "Collapse case folder" : "Expand case folder"}
-                    >
-                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="conv-list">
-                    {threads.map(thread => (
-                      <div 
-                        key={thread.id} 
-                        className={`conv-item ${currentThread?.id === thread.id ? 'active' : ''}`}
-                        onClick={() => setActiveThreadId(thread.id)}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                          <div className="conv-item-title">
-                            <MessageSquare size={15} />
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 170 }}>
-                              {thread.title}
-                            </span>
-                          </div>
-                          {threads.length > 1 && (
-                            <button
-                              className="btn-delete-thread"
-                              onClick={(e) => handleDeleteThread(thread.id, e)}
-                              title="Delete conversation"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
-                        </div>
-                        <div className="conv-item-time">{thread.time}</div>
-                      </div>
-                    ))}
-
-                    <button 
-                      className="btn-new-conversation"
-                      onClick={(e) => handleCreateNewThread(c.id, e)}
-                      title="Start a new conversation thread"
-                    >
-                      <Plus size={15} />
-                      <span>New Conversation</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          <div className="conv-filter-tabs">
+            <button 
+              className={`conv-tab-pill ${caseFilterStatus === 'all' ? 'active' : ''}`}
+              onClick={() => setCaseFilterStatus('all')}
+            >
+              All ({casesList.length})
+            </button>
+            <button 
+              className={`conv-tab-pill ${caseFilterStatus === 'active' ? 'active' : ''}`}
+              onClick={() => setCaseFilterStatus('active')}
+            >
+              Active ({activeCasesCount})
+            </button>
+            <button 
+              className={`conv-tab-pill ${caseFilterStatus === 'closed' ? 'active' : ''}`}
+              onClick={() => setCaseFilterStatus('closed')}
+            >
+              Closed ({closedCasesCount})
+            </button>
+          </div>
         </div>
+
+        {filteredCases.length === 0 ? (
+          <div className="conv-empty-search">
+            <Folder size={26} color="var(--text-tertiary)" />
+            <div className="conv-empty-title">No cases found</div>
+            <div className="conv-empty-sub">
+              {caseSearchQuery ? `No matches for "${caseSearchQuery}"` : 'No cases in this status category'}
+            </div>
+            <button 
+              className="btn-reset-filters"
+              onClick={() => {
+                setCaseSearchQuery('');
+                setCaseFilterStatus('all');
+              }}
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div className="conv-folders-scroll-list">
+            {filteredCases.map(c => {
+              const isCurrent = activeCase?.id === c.id;
+              const isExpanded = expandedCaseIds.has(c.id);
+              const threads = isCurrent ? currentCaseThreads : (threadsByCase[c.id] || getCaseThreads(c.id));
+
+              return (
+                <div key={c.id} className="conv-folder">
+                  <div 
+                    className={`conv-folder-header ${isCurrent ? 'active-case-header' : ''}`}
+                    onClick={() => {
+                      handleSelectCase(c);
+                      if (isCurrent) {
+                        toggleCaseFolder(c.id);
+                      }
+                    }}
+                    style={{
+                      backgroundColor: isCurrent ? 'var(--bg-surface-hover)' : 'transparent',
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-md)'
+                    }}
+                  >
+                    <div className="conv-folder-title">
+                      <Folder size={17} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                      <span style={{ fontWeight: isCurrent ? 700 : 600 }}>
+                        {c.short_name || c.client_name}
+                      </span>
+                      {c.status === 'closed' && (
+                        <span className="status-pill closed" style={{ fontSize: '0.65rem', padding: '1px 6px', flexShrink: 0 }}>
+                          Closed
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="conv-folder-right-actions">
+                      <button 
+                        className="btn-folder-add-thread" 
+                        onClick={(e) => handleCreateNewThread(c.id, e)}
+                        title={`New conversation for ${c.short_name || c.client_name}`}
+                      >
+                        <Plus size={14} />
+                      </button>
+                      <button 
+                        className="btn-folder-chevron" 
+                        onClick={(e) => toggleCaseFolder(c.id, e)}
+                        title={isExpanded ? "Collapse case folder" : "Expand case folder"}
+                      >
+                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="conv-list">
+                      {threads.map(thread => (
+                        <div 
+                          key={thread.id} 
+                          className={`conv-item ${currentThread?.id === thread.id ? 'active' : ''}`}
+                          onClick={() => setActiveThreadId(thread.id)}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                            <div className="conv-item-title">
+                              <MessageSquare size={15} />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 170 }}>
+                                {thread.title}
+                              </span>
+                            </div>
+                            {threads.length > 1 && (
+                              <button
+                                className="btn-delete-thread"
+                                onClick={(e) => handleDeleteThread(thread.id, e)}
+                                title="Delete conversation"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
+                          </div>
+                          <div className="conv-item-time">{thread.time}</div>
+                        </div>
+                      ))}
+
+                      <button 
+                        className="btn-new-conversation"
+                        onClick={(e) => handleCreateNewThread(c.id, e)}
+                        title="Start a new conversation thread"
+                      >
+                        <Plus size={15} />
+                        <span>New Conversation</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Center Column: Chat Main */}
