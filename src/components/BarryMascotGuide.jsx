@@ -61,16 +61,17 @@ export default function BarryMascotGuide({ activeTab, onSelectTab }) {
   const currentTip = tipsByTab[activeTab] || tipsByTab.overview;
 
   return (
-    <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 100 }}>
+    <div style={{ position: 'fixed', bottom: '16px', right: '18px', zIndex: 90 }}>
       {/* Expanded Mascot Dialog Card */}
       {isOpen && (
         <div style={{
-          marginBottom: '14px',
-          width: '380px',
+          marginBottom: '12px',
+          width: '360px',
+          maxWidth: 'calc(100vw - 36px)',
           borderRadius: '16px',
           backgroundColor: 'var(--bg-surface)',
           border: '2px solid var(--brand-primary)',
-          padding: '18px',
+          padding: '16px',
           boxShadow: '0 12px 36px rgba(42, 28, 17, 0.2)',
           position: 'relative'
         }}>
@@ -78,22 +79,23 @@ export default function BarryMascotGuide({ activeTab, onSelectTab }) {
             onClick={() => setIsOpen(false)}
             style={{
               position: 'absolute',
-              top: '12px',
-              right: '12px',
+              top: '10px',
+              right: '10px',
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
               color: 'var(--text-tertiary)',
               padding: '4px'
             }}
+            title="Close Guide"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
             <div style={{
-              width: '52px',
-              height: '52px',
+              width: '44px',
+              height: '44px',
               borderRadius: '50%',
               overflow: 'hidden',
               border: '2px solid var(--brand-primary)',
@@ -107,24 +109,24 @@ export default function BarryMascotGuide({ activeTab, onSelectTab }) {
               />
             </div>
             <div>
-              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--brand-primary)', fontWeight: 700 }}>
-                Barry the Beaver • Beaverly Mascot
+              <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--brand-primary)', fontWeight: 700 }}>
+                Barry the Beaver • Mascot Guide
               </div>
-              <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {currentTip.title}
               </h4>
             </div>
           </div>
 
           <p style={{
-            fontSize: '0.85rem',
+            fontSize: '0.82rem',
             color: 'var(--text-secondary)',
-            lineHeight: 1.55,
+            lineHeight: 1.5,
             backgroundColor: 'var(--bg-app)',
-            padding: '12px',
+            padding: '10px 12px',
             borderRadius: '10px',
             border: '1px solid var(--border-light)',
-            margin: '0 0 14px 0'
+            margin: '0 0 12px 0'
           }}>
             "{currentTip.speech}"
           </p>
@@ -136,12 +138,12 @@ export default function BarryMascotGuide({ activeTab, onSelectTab }) {
                 setIsOpen(false);
               }}
               className="belaw-btn-primary"
-              style={{ fontSize: '0.82rem', padding: '7px 14px', gap: '6px' }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', gap: '5px' }}
             >
               <span>{currentTip.actionText}</span>
-              <ArrowRight size={14} />
+              <ArrowRight size={13} />
             </button>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
               Beaverly v7.0
             </span>
           </div>
@@ -154,25 +156,26 @@ export default function BarryMascotGuide({ activeTab, onSelectTab }) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          padding: '6px 16px 6px 6px',
+          gap: '8px',
+          padding: '4px 12px 4px 4px',
           borderRadius: '9999px',
           backgroundColor: 'var(--bg-surface)',
-          border: '2px solid var(--brand-primary)',
-          boxShadow: '0 8px 24px rgba(42, 28, 17, 0.16)',
+          border: '1.5px solid var(--brand-primary)',
+          boxShadow: '0 6px 18px rgba(42, 28, 17, 0.14)',
           cursor: 'pointer',
-          transition: 'transform 0.2s ease',
+          transition: 'all 0.2s ease',
         }}
         onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
         onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1.0)'}
         title="Ask Barry the Beaver for demo tips"
       >
         <div style={{
-          width: '42px',
-          height: '42px',
+          width: '34px',
+          height: '34px',
           borderRadius: '50%',
           overflow: 'hidden',
-          border: '1.5px solid var(--brand-primary)'
+          border: '1.5px solid var(--brand-primary)',
+          flexShrink: 0
         }}>
           <img 
             src="/assets/mascot.png" 
@@ -182,12 +185,12 @@ export default function BarryMascotGuide({ activeTab, onSelectTab }) {
           />
         </div>
         <div style={{ textAlign: 'left' }}>
-          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
             <span>Barry</span>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#397347', display: 'inline-block' }}></span>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#397347', display: 'inline-block' }}></span>
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-            Guide & Storyline
+          <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', lineHeight: 1 }}>
+            Guide & Tips
           </div>
         </div>
       </button>

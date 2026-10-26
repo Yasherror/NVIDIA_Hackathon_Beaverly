@@ -7,10 +7,19 @@ import {
   MessageSquare, Folder, ChevronDown, ChevronRight, Lock, Sparkles, 
   Paperclip, Send, AlertTriangle, AlertCircle, User, 
   Loader2, ShieldCheck, Plus, Trash2, PanelLeftClose, PanelLeftOpen,
-  CheckCircle2, ShieldAlert, Clock, Download, Copy
+  PanelRightClose, PanelRightOpen,
+  CheckCircle2, ShieldAlert, Clock, Download, Copy, Edit3, Globe, X, Wand2
 } from 'lucide-react';
 import PreSubmissionStudio from '../components/PreSubmissionStudio';
 import './Chat.css';
+
+const REASONING_PHASES = [
+  "Verifying OpenShell eBPF kernel isolation boundary...",
+  "Loading Lawyer Memory & Case Facts from SQLite...",
+  "Querying LanceDB semantic vector embeddings...",
+  "Routing context through Hermes Agent to Nemotron...",
+  "Synthesizing private citation-grounded draft..."
+];
 
 export default function Chat({ selectedCase, setSelectedCase }) {
   const { refreshSkills, globalSkills } = useAppContext();
@@ -18,6 +27,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   const [activeCase, setActiveCase] = useState(selectedCase || null);
   const [showCaseDropdown, setShowCaseDropdown] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMemoryOpen, setIsMemoryOpen] = useState(true);
   const dropdownRef = useRef(null);
 
   // Close case dropdown on outside click
@@ -35,15 +45,54 @@ export default function Chat({ selectedCase, setSelectedCase }) {
     };
   }, [showCaseDropdown]);
 
-  // Threads per case ID
   const [threadsByCase, setThreadsByCase] = useState({});
   const [activeThreadId, setActiveThreadId] = useState(null);
+  const [expandedCaseIds, setExpandedCaseIds] = useState(new Set());
+
+  // Automatically expand active case when loaded or switched
+  useEffect(() => {
+    if (activeCase?.id) {
+      setExpandedCaseIds(prev => new Set([...prev, activeCase.id]));
+    }
+  }, [activeCase?.id]);
+
+  const toggleCaseFolder = (caseId, e) => {
+    if (e) e.stopPropagation();
+    setExpandedCaseIds(prev => {
+      const next = new Set(prev);
+      if (next.has(caseId)) {
+        next.delete(caseId);
+      } else {
+        next.add(caseId);
+      }
+      return next;
+    });
+  };
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [reasoningPhaseIndex, setReasoningPhaseIndex] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (isLoading) {
+      setReasoningPhaseIndex(0);
+      interval = setInterval(() => {
+        setReasoningPhaseIndex(prev => (prev + 1) % REASONING_PHASES.length);
+      }, 1400);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
   const [telemetry, setTelemetry] = useState(null);
   const [isStudioOpen, setIsStudioOpen] = useState(false);
   const [studioInitialDraft, setStudioInitialDraft] = useState('');
+
+  // In-Chat Skill Teaching & Correction Modal State
+  const [correctionModalOpen, setCorrectionModalOpen] = useState(false);
+  const [targetOriginalText, setTargetOriginalText] = useState('');
+  const [userCorrectedText, setUserCorrectedText] = useState('');
+  const [userCorrectionReason, setUserCorrectionReason] = useState('');
+  const [isAnalyzingSkill, setIsAnalyzingSkill] = useState(false);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -106,6 +155,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
     setActiveCase(c);
     if (setSelectedCase) setSelectedCase(c);
     setShowCaseDropdown(false);
+    setExpandedCaseIds(prev => new Set([...prev, c.id]));
     const threads = threadsByCase[c.id] || getCaseThreads(c.id);
     if (threads.length > 0) {
       setActiveThreadId(threads[0].id);
@@ -242,6 +292,17 @@ export default function Chat({ selectedCase, setSelectedCase }) {
       });
       setTelemetry(response.telemetry || { model: response.model, tier: 'Nano', latency_ms: 0, credit_efficiency: 'optimized routing' });
       const assistantMessage = { role: 'assistant', content: response.content };
+      
+      const newItems = [assistantMessage];
+      if (response.suggested_skill && response.suggested_skill.trigger_pattern) {
+        newItems.push({
+          role: 'assistant',
+          isSkill: true,
+          skillData: response.suggested_skill,
+          skillQuestion: response.skill_question || "I noticed this preference. Should I remember this habit?"
+        });
+      }
+
       setThreadsByCase(prev => {
         const list = prev[cObj.id] || updatedThreadsWithUser;
         return {
@@ -250,7 +311,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
             if (t.id === thisThreadId) {
               return {
                 ...t,
-                messages: [...t.messages, assistantMessage]
+                messages: [...t.messages, ...newItems]
               };
             }
             return t;
@@ -280,33 +341,86 @@ export default function Chat({ selectedCase, setSelectedCase }) {
     }
   };
 
-  const handleConfirmSkill = async (messageIndex, skillData) => {
+  const handleConfirmSkill = async (messageIndex, skillData, chosenScope = null) => {
     if (!activeCase) return;
+    const finalScope = chosenScope || skillData.scope || 'global';
     try {
       const saved = await apiClient.post('/skills/', {
-        scope: skillData.scope || 'global',
-        case_id: skillData.scope === 'case-specific' ? activeCase.id : null,
+        scope: finalScope,
+        case_id: finalScope === 'case-specific' ? activeCase.id : null,
         name: skillData.name || 'Lawyer drafting preference',
         trigger_pattern: skillData.trigger_pattern || skillData.triggerPattern || '',
         replacement: skillData.replacement || '',
         category: skillData.category || 'Lawyer preference',
         learned_from: skillData.learned_from || 'Hermes Agent + Nemotron Nano',
-        confidence: Number(skillData.confidence || 0.9),
-        description: skillData.description || '',
+        confidence: Number(skillData.confidence || 0.95),
+        description: skillData.description || `Replaces '${skillData.trigger_pattern}' with '${skillData.replacement}'`,
         occurrences: Number(skillData.occurrences || 1),
       });
       await refreshSkills();
       setThreadsByCase(prev => {
-        const list = prev[activeCase.id] || getCaseThreads(activeCase.id);
-        return { ...prev, [activeCase.id]: list.map(t => ({
-          ...t,
-          messages: t.messages.map((msg, idx) => idx === messageIndex
-            ? { ...msg, skillConfirmed: true, skillId: saved.id }
-            : msg)
-        })) };
+        const list = prev[activeCase.id] || currentCaseThreads;
+        const targetThreadId = currentThread?.id || `${activeCase.id}-t1`;
+        return {
+          ...prev,
+          [activeCase.id]: list.map(t => {
+            if (t.id === targetThreadId) {
+              return {
+                ...t,
+                messages: t.messages.map((msg, idx) => idx === messageIndex
+                  ? { ...msg, skillConfirmed: true, confirmedScope: finalScope, skillId: saved?.id }
+                  : msg)
+              };
+            }
+            return t;
+          })
+        };
       });
     } catch (error) {
       console.error('Could not confirm skill:', error);
+    }
+  };
+
+  const handleStartCorrection = (draftContent) => {
+    setTargetOriginalText(draftContent);
+    setUserCorrectedText('');
+    setUserCorrectionReason('');
+    setCorrectionModalOpen(true);
+  };
+
+  const handleSubmitCorrection = async () => {
+    if (!userCorrectedText.trim() && !userCorrectionReason.trim()) {
+      alert('Please specify your preferred phrasing or correction instructions.');
+      return;
+    }
+    if (!activeCase) return;
+    setIsAnalyzingSkill(true);
+    try {
+      const res = await apiClient.post('/chat/correction', {
+        case_id: activeCase.id,
+        original_text: targetOriginalText,
+        corrected_text: userCorrectedText || targetOriginalText,
+        correction_description: userCorrectionReason || userCorrectedText
+      });
+      setCorrectionModalOpen(false);
+      if (res.should_create_skill && res.proposed_skill) {
+        appendAssistantMessage({
+          role: 'assistant',
+          isSkill: true,
+          skillData: res.proposed_skill,
+          skillQuestion: res.scope_question || "I noticed this preference. Would you like me to remember this habit?"
+        });
+      } else {
+        appendAssistantMessage({
+          role: 'assistant',
+          content: "I've noted this specific drafting adjustment for your matter."
+        });
+      }
+    } catch (err) {
+      console.error('Correction failed:', err);
+      alert('Could not process correction: ' + err.message);
+    } finally {
+      setIsAnalyzingSkill(false);
     }
   };
 
@@ -430,65 +544,75 @@ export default function Chat({ selectedCase, setSelectedCase }) {
       {/* Left Column: Conversations by Case */}
       <div className={`conversations-sidebar ${!isSidebarOpen ? 'collapsed' : ''}`}>
         <div className="conv-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <MessageSquare size={22} strokeWidth={2.5} />
-            <span>Conversations</span>
+          <div className="conv-header-left">
+            <MessageSquare size={18} strokeWidth={2.5} color="var(--brand-primary)" />
+            <span className="conv-header-title">Conversations</span>
+            <span className="conv-cases-badge" title={`${casesList.length} Total Cases`}>{casesList.length} cases</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
-              {casesList.length} cases
-            </span>
+          <div className="conv-header-right">
             <button 
               className="btn-collapse-sidebar"
               onClick={() => setIsSidebarOpen(false)}
               title="Collapse Conversations sidebar"
             >
-              <PanelLeftClose size={18} />
+              <PanelLeftClose size={17} />
             </button>
           </div>
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
           {casesList.map(c => {
             const isCurrent = activeCase?.id === c.id;
+            const isExpanded = expandedCaseIds.has(c.id);
             const threads = isCurrent ? currentCaseThreads : (threadsByCase[c.id] || getCaseThreads(c.id));
 
             return (
               <div key={c.id} className="conv-folder">
                 <div 
                   className={`conv-folder-header ${isCurrent ? 'active-case-header' : ''}`}
-                  onClick={() => handleSelectCase(c)}
+                  onClick={() => {
+                    handleSelectCase(c);
+                    if (isCurrent) {
+                      toggleCaseFolder(c.id);
+                    }
+                  }}
                   style={{
                     backgroundColor: isCurrent ? 'var(--bg-surface-hover)' : 'transparent',
-                    padding: '8px 12px',
+                    padding: '8px 10px',
                     borderRadius: 'var(--radius-md)'
                   }}
                 >
                   <div className="conv-folder-title">
-                    <Folder size={18} color="var(--brand-primary)" />
+                    <Folder size={17} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
                     <span style={{ fontWeight: isCurrent ? 700 : 600 }}>
                       {c.short_name || c.client_name}
                     </span>
                     {c.status === 'closed' && (
-                      <span className="status-pill closed" style={{ fontSize: '0.68rem', padding: '2px 6px' }}>
+                      <span className="status-pill closed" style={{ fontSize: '0.65rem', padding: '1px 6px', flexShrink: 0 }}>
                         Closed
                       </span>
                     )}
                   </div>
                   
-                  <div className="conv-folder-right-actions" onClick={e => e.stopPropagation()}>
+                  <div className="conv-folder-right-actions">
                     <button 
                       className="btn-folder-add-thread" 
                       onClick={(e) => handleCreateNewThread(c.id, e)}
                       title={`New conversation for ${c.short_name || c.client_name}`}
                     >
-                      <Plus size={15} />
+                      <Plus size={14} />
                     </button>
-                    {isCurrent ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                    <button 
+                      className="btn-folder-chevron" 
+                      onClick={(e) => toggleCaseFolder(c.id, e)}
+                      title={isExpanded ? "Collapse case folder" : "Expand case folder"}
+                    >
+                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </button>
                   </div>
                 </div>
 
-                {isCurrent && (
+                {isExpanded && (
                   <div className="conv-list">
                     {threads.map(thread => (
                       <div 
@@ -549,10 +673,11 @@ export default function Chat({ selectedCase, setSelectedCase }) {
               <div 
                 className="chat-case-pill" 
                 onClick={() => setShowCaseDropdown(!showCaseDropdown)}
+                title={activeCase ? (activeCase.short_name || activeCase.client_name) : 'Select Case'}
               >
-                <Folder size={17} />
-                <span>{activeCase ? (activeCase.short_name || activeCase.client_name) : 'Select Case'}</span>
-                <ChevronDown size={15} />
+                <Folder size={16} />
+                <span className="case-pill-text">{activeCase ? (activeCase.short_name || activeCase.client_name) : 'Select Case'}</span>
+                <ChevronDown size={14} />
               </div>
 
               {showCaseDropdown && (
@@ -576,29 +701,42 @@ export default function Chat({ selectedCase, setSelectedCase }) {
             </div>
           </div>
 
-          <div className="chat-security-notice">
-            <Lock size={15} color="var(--brand-primary)" />
-            <span>OpenShell Sandboxed • Matter #{activeCase?.matter_id || '2026'}</span>
-          </div>
-          <div className="router-telemetry" title={telemetry?.routing_reason || 'Waiting for first request'}>
-            <span className={`router-dot ${telemetry?.tier?.toLowerCase() || 'nano'}`} />
-            <b>{telemetry?.tier || 'Nano'}</b>
-            <span>{telemetry ? `${telemetry.latency_ms}ms` : 'ready'}</span>
-            <span className="router-savings">{telemetry?.credit_efficiency || 'credit-optimized'}</span>
-          </div>
+          <div className="chat-header-right">
+            <div className="chat-security-notice" title={`OpenShell Sandboxed • Matter #${activeCase?.matter_id || '2026'}`}>
+              <Lock size={13} color="var(--brand-primary)" />
+              <span className="security-notice-text">
+                #{activeCase?.matter_id ? (activeCase.matter_id.startsWith('MATTER-2026-') ? activeCase.matter_id.replace('MATTER-2026-', '') : activeCase.matter_id) : '2026'}
+              </span>
+            </div>
 
-          <button 
-            className="btn-fact-check-studio"
-            onClick={() => {
-              setStudioInitialDraft('');
-              setIsStudioOpen(true);
-            }}
-            title="Open Pre-Submission Fact Verification Studio (PRD P0-4)"
-          >
-            <ShieldCheck size={16} color="var(--brand-primary)" />
-            <span>Fact Check Studio</span>
-            <span className="fact-check-p0-badge">P0-4</span>
-          </button>
+            <div className="router-telemetry" title={telemetry?.routing_reason || 'Waiting for first request'}>
+              <span className={`router-dot ${telemetry?.tier?.toLowerCase() || 'nano'}`} />
+              <b>{telemetry?.tier || 'Nano'}</b>
+              <span>{telemetry ? `${telemetry.latency_ms}ms` : 'ready'}</span>
+              <span className="router-savings">{telemetry?.credit_efficiency || 'credit-optimized'}</span>
+            </div>
+
+            <button 
+              className="btn-fact-check-studio"
+              onClick={() => {
+                setStudioInitialDraft('');
+                setIsStudioOpen(true);
+              }}
+              title="Open Pre-Submission Fact Verification Studio (PRD P0-4)"
+            >
+              <ShieldCheck size={16} color="var(--brand-primary)" />
+              <span>Fact Check Studio</span>
+              <span className="fact-check-p0-badge">P0-4</span>
+            </button>
+
+            <button
+              className="btn-sidebar-toggle"
+              onClick={() => setIsMemoryOpen(!isMemoryOpen)}
+              title={isMemoryOpen ? "Hide Memory Vault" : "Show Memory Vault"}
+            >
+              {isMemoryOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+            </button>
+          </div>
         </div>
 
         {/* Demo controls removed from the product UI. */}
@@ -807,36 +945,69 @@ export default function Chat({ selectedCase, setSelectedCase }) {
                 </div>
               </div>
             ) : msg.isSkill ? (
-              <div key={idx} className="alert-banner warning" style={{ marginTop: 15, marginBottom: 15, padding: '16px', borderRadius: '12px', backgroundColor: '#fffbf0', border: '2px solid #e67e22' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800, color: '#d35400', fontSize: '0.96rem' }}>
-                  <AlertTriangle size={20} /> Memory Boundary Elevation Proposed
+              <div key={idx} className="skill-proposal-card" style={{ marginTop: 15, marginBottom: 15, padding: '18px', borderRadius: '14px', backgroundColor: 'var(--bg-surface)', border: '1.5px solid var(--border-dark)', boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <img 
+                    src="/assets/mascot.png" 
+                    alt="Barry the Beaver" 
+                    style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--brand-primary)' }}
+                    onError={(e) => { e.target.src = '/src/assets/belawbeaver.jpg'; }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.98rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>Barry's Self-Evolving Memory</span>
+                      <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#FDF3E7', color: 'var(--brand-primary)', fontWeight: 700 }}>
+                        Hermes Agent + Nemotron Nano
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      Category: <b>{msg.skillData.category || 'Drafting Habit'}</b> • Confidence: {Math.round((msg.skillData.confidence || 0.95) * 100)}%
+                    </div>
+                  </div>
                 </div>
-                <div style={{ marginTop: 8, fontSize: '0.9rem', color: '#333', fontWeight: 600 }}>
+
+                <div style={{ fontSize: '0.92rem', color: 'var(--text-primary)', fontWeight: 600, marginBottom: 10 }}>
                   {msg.skillQuestion}
                 </div>
-                <div style={{ marginTop: 6, fontSize: '0.82rem', fontFamily: 'monospace', color: '#666' }}>
-                  Pattern: "{msg.skillData.trigger_pattern || msg.skillData.triggerPattern}" → "{msg.skillData.replacement}" ({msg.skillData.scope})
+
+                <div style={{ backgroundColor: 'var(--bg-main)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-light)', marginBottom: 14 }}>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700, marginBottom: 4 }}>
+                    Learned Drafting Preference
+                  </div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                    <span style={{ color: '#c0392b', textDecoration: 'line-through' }}>"{msg.skillData.trigger_pattern || msg.skillData.triggerPattern}"</span>
+                    &nbsp;→&nbsp;
+                    <span style={{ color: '#27ae60', fontWeight: 700 }}>"{msg.skillData.replacement}"</span>
+                  </div>
                 </div>
-                <div className="btn-group" style={{ marginTop: 12 }}>
+
+                <div className="btn-group" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                    {msg.skillConfirmed ? (
-                     <span style={{ color: '#27ae60', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                       <CheckCircle2 size={16} /> Saved as {msg.skillData.scope} memory • Applied automatically to future drafts
-                     </span>
+                     <div style={{ color: '#27ae60', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
+                       <CheckCircle2 size={18} /> Saved as {msg.confirmedScope === 'case-specific' ? 'Case Memory (Isolated)' : 'Global Lawyer Memory (All Matters)'} • Applied automatically to future drafts!
+                     </div>
                    ) : (
                      <>
                        <button 
                          className="btn-filled" 
-                         onClick={() => handleConfirmSkill(idx, msg.skillData)}
-                         style={{ backgroundColor: 'var(--brand-primary)', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
+                         onClick={() => handleConfirmSkill(idx, msg.skillData, 'global')}
+                         style={{ backgroundColor: 'var(--brand-primary)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 'var(--radius-pill)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.86rem' }}
                        >
-                         Yes, remember ({msg.skillData.scope})
+                         <Globe size={14} /> Save as Global Habit (All Matters)
                        </button>
                        <button 
                          className="btn-outline" 
-                         onClick={() => appendAssistantMessage({ role: 'assistant', content: 'Understood — I will not save this as a persistent skill.' })}
-                         style={{ padding: '7px 14px', borderRadius: '8px', cursor: 'pointer' }}
+                         onClick={() => handleConfirmSkill(idx, msg.skillData, 'case-specific')}
+                         style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.86rem', borderColor: 'var(--border-dark)' }}
                        >
-                         Not now
+                         <Lock size={14} color="var(--brand-primary)" /> Save for this Matter Only
+                       </button>
+                       <button 
+                         className="btn-outline" 
+                         onClick={() => appendAssistantMessage({ role: 'assistant', content: 'Understood — I will not persist this habit.' })}
+                         style={{ padding: '8px 14px', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontSize: '0.84rem', color: 'var(--text-tertiary)', border: 'none' }}
+                       >
+                         Dismiss
                        </button>
                      </>
                    )}
@@ -856,6 +1027,14 @@ export default function Chat({ selectedCase, setSelectedCase }) {
                         {msg.content}
                       </ReactMarkdown>
                       <div className="msg-actions-bar">
+                        <button 
+                          className="msg-action-btn"
+                          onClick={() => handleStartCorrection(msg.content)}
+                          title="Teach Beaverly your preferred wording habit from this draft"
+                        >
+                          <Edit3 size={13} color="var(--brand-primary)" />
+                          <span>Correct & Teach Habit</span>
+                        </button>
                         <button 
                           className="msg-action-btn"
                           onClick={() => {
@@ -888,8 +1067,36 @@ export default function Chat({ selectedCase, setSelectedCase }) {
           ))}
 
           {isLoading && (
-            <div className="alert-banner loading" style={{ marginTop: 10 }}>
-              <Loader2 size={16} className="spinner" style={{ animation: 'spin 1s linear infinite' }} /> Beaverly is reasoning (Nemotron)...
+            <div className="msg-row ai msg-loading-row">
+              <div className="msg-icon-wrap mascot-pulse-wrap">
+                <img 
+                  src="/assets/mascot.png" 
+                  alt="Barry reasoning" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  onError={(e) => { e.target.src = '/src/assets/belawbeaver.jpg'; }}
+                />
+              </div>
+              <div className="msg-bubble ai reasoning-bubble">
+                <div className="reasoning-header">
+                  <div className="reasoning-spinner-ring">
+                    <Loader2 size={18} className="spinner" />
+                  </div>
+                  <div className="reasoning-title">
+                    <span>Beaverly is reasoning</span>
+                    <span className="dot-pulse">
+                      <span style={{ animationDelay: '0ms' }}>.</span>
+                      <span style={{ animationDelay: '200ms' }}>.</span>
+                      <span style={{ animationDelay: '400ms' }}>.</span>
+                    </span>
+                  </div>
+                  <span className="reasoning-badge">Nemotron Nano</span>
+                </div>
+                <div className="reasoning-step-text">
+                  <Sparkles size={14} className="sparkle-icon" />
+                  <span>{REASONING_PHASES[reasoningPhaseIndex]}</span>
+                </div>
+                <div className="reasoning-shimmer-bar"></div>
+              </div>
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -932,8 +1139,17 @@ export default function Chat({ selectedCase, setSelectedCase }) {
       </div>
 
       {/* Right Column: Memory Vaults */}
-      <div className="memory-sidebar">
-        <h2 className="memory-header">Beaverly Memory Vault</h2>
+      <div className={`memory-sidebar ${!isMemoryOpen ? 'collapsed' : ''}`}>
+        <div className="memory-header-row">
+          <h2 className="memory-header">Beaverly Memory</h2>
+          <button 
+            className="btn-collapse-sidebar" 
+            onClick={() => setIsMemoryOpen(false)}
+            title="Collapse Memory Vault"
+          >
+            <PanelRightClose size={18} />
+          </button>
+        </div>
         <button className="certificate-button" onClick={() => activeCase && window.open(`http://localhost:8000/api/intelligence/cases/${activeCase.id}/certificate`, '_blank')}>
           <Download size={15} /> Export protection certificate
         </button>
@@ -994,6 +1210,97 @@ export default function Chat({ selectedCase, setSelectedCase }) {
           setInput(verifiedText);
         }}
       />
+
+      {/* Teach Beaverly Direct Correction Modal (PRD P0-1 & P0-2) */}
+      {correctionModalOpen && (
+        <div className="modal-overlay" onClick={() => setCorrectionModalOpen(false)}>
+          <div className="modal-content" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <img 
+                  src="/assets/mascot.png" 
+                  alt="Barry the Beaver" 
+                  style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} 
+                  onError={(e) => { e.target.src = '/src/assets/belawbeaver.jpg'; }}
+                />
+                <h2>Teach Beaverly a Habit</h2>
+              </div>
+              <X size={20} style={{ cursor: 'pointer' }} onClick={() => setCorrectionModalOpen(false)} />
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>AI Draft Excerpt (Reference)</label>
+                <div style={{
+                  padding: '12px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'var(--bg-main)',
+                  border: '1px solid var(--border-light)',
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary)',
+                  maxHeight: '110px',
+                  overflowY: 'auto',
+                  lineHeight: 1.5
+                }}>
+                  {targetOriginalText.length > 250 ? targetOriginalText.slice(0, 250) + '...' : targetOriginalText}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Your Preferred Replacement / Rule *</label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. Always replace 'party of the first part' with 'client' in all agreements."
+                  value={userCorrectedText}
+                  onChange={(e) => setUserCorrectedText(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-light)',
+                    backgroundColor: 'var(--bg-main)',
+                    fontFamily: 'inherit',
+                    fontSize: '0.9rem'
+                  }}
+                />
+                <div className="help-text">
+                  You can specify a direct replacement (e.g. <i>"Use 'client' instead of 'party of the first part'"</i>) or a named party binding.
+                </div>
+              </div>
+
+              <div style={{
+                backgroundColor: '#FDF3E7',
+                border: '1px solid var(--border-dark)',
+                padding: '12px 14px',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8
+              }}>
+                <Sparkles size={16} color="var(--brand-primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <b>Hermes Agent + Nemotron Nano Scope Engine:</b> Beaverly will automatically evaluate whether your instruction is a firm-wide drafting style (Global) or case-specific confidential entity (Isolated).
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-outline" onClick={() => setCorrectionModalOpen(false)} disabled={isAnalyzingSkill}>
+                Cancel
+              </button>
+              <button className="btn-filled" onClick={handleSubmitCorrection} disabled={isAnalyzingSkill}>
+                {isAnalyzingSkill ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Analyzing Habit...
+                  </span>
+                ) : (
+                  'Analyze & Teach Beaverly'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

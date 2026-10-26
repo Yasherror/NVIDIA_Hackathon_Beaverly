@@ -1,8 +1,8 @@
-﻿/* Skills Page - Full-Width Responsive Layout */
+/* Skills Page - Full-Width Responsive Layout */
 .skills-page-container { 
   display: flex; 
   flex-direction: column; 
-  padding: 24px 40px; 
+  padding: 4px 6px 36px 6px; 
   width: 100%;
   max-width: 100%; 
 }
@@ -11,12 +11,14 @@
   display: flex; 
   justify-content: space-between; 
   align-items: center; 
-  margin-bottom: 32px; 
+  margin-bottom: 20px; 
   width: 100%;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .skills-page-title { 
-  font-size: 2.2rem; 
+  font-size: 1.8rem; 
   font-weight: 700; 
   color: var(--text-primary); 
 }

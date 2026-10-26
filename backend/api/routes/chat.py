@@ -210,6 +210,29 @@ async def send_message(req: ChatRequest):
             if trigger and replacement:
                 response = re.sub(re.escape(trigger), replacement, response, flags=re.IGNORECASE)
 
+        # Check if user message indicates an intent to establish a drafting habit or correction
+        suggested_skill = None
+        skill_question = None
+        correction_indicators = [
+            "replace", "instead of", "change", "don't use", "don't say", "never use",
+            "always use", "refer to", "phrase as", "habit", "preference"
+        ]
+        if any(ind in lower_query for ind in correction_indicators):
+            try:
+                corr_res = await process_correction(
+                    correction=last_user_msg,
+                    original_text="",
+                    corrected_text="",
+                    case_id=req.case_id,
+                )
+                if corr_res.get("should_create_skill") and corr_res.get("proposed_skill"):
+                    p_skill = corr_res["proposed_skill"]
+                    if p_skill.get("trigger_pattern") and p_skill.get("replacement"):
+                        suggested_skill = p_skill
+                        skill_question = corr_res.get("scope_question") or "Should I always remember this habit across all cases?"
+            except Exception as e_corr:
+                logger.debug(f"Correction intent detection skipped: {e_corr}")
+
         # Log authorized read access to protection logs
         await log_access(req.case_id, "ALLOW", f"/sandboxes/{req.case_id}/chat_session", "Same-case workspace query")
 
@@ -218,7 +241,9 @@ async def send_message(req: ChatRequest):
             "content": response,
             "model": selected_model,
             "telemetry": {"model": selected_model, "tier": "Ultra" if selected_model == settings.model_ultra else ("Super" if selected_model == settings.model_super else "Nano"), "routing_reason": routing_reason, "latency_ms": round((time.perf_counter() - started) * 1000), "estimated_input_tokens": max(1, len(last_user_msg) // 4), "credit_efficiency": "optimized routing"},
-            "applied_skills": [s["name"] for s in active_skills]
+            "applied_skills": [s["name"] for s in active_skills],
+            "suggested_skill": suggested_skill,
+            "skill_question": skill_question
         }
     except Exception as e:
         logger.error(f"Nebius API call encountered issue: {e}. Providing contextual assistance.")

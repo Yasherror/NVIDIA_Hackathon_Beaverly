@@ -23,7 +23,7 @@ SCOPE_DETECTION_PROMPT = """You are Beaverly's memory scope detector. Analyze a 
 Correction: "{correction}"
 
 Determine:
-1. Is this a reusable habit worth saving? (e.g. style preference, terminology change)
+1. Is this a reusable preference worth saving? (True for general style/terminology habits OR matter-specific entity designations like Party A -> Company)
 2. Does it contain case-specific information (client names, specific company names, case numbers, specific dispute facts)?
 
 Answer in JSON:
@@ -31,7 +31,7 @@ Answer in JSON:
   "is_reusable": true,
   "contains_case_info": false,
   "suggested_name": "Short descriptive title (4-6 words)",
-  "category": "Plain Language Drafting / Forum Selection / Named Entity",
+  "category": "Plain Language Drafting / Forum Selection / Named Entity Binding",
   "confidence": 0.95,
   "reason": "Brief explanation"
 }}
@@ -184,10 +184,44 @@ async def process_correction(
     """
     scope_result = await detect_scope(correction)
 
-    if not scope_result.get("is_reusable", True):
+    contains_case_info = scope_result.get("contains_case_info", False)
+    # If the model flagged case-specific info or company name, it is a valid Case Memory candidate
+    if not contains_case_info:
+        reason_text = (scope_result.get("reason") or "").lower()
+        if any(term in reason_text for term in ["case-specific", "company name", "specific company", "specific entity", "party a", "party b"]):
+            contains_case_info = True
+
+    if not scope_result.get("is_reusable", True) and not contains_case_info:
         return {"should_create_skill": False, "reason": scope_result.get("reason", "Not a reusable pattern")}
 
     pattern = await extract_skill_pattern(original_text, corrected_text)
+    
+    # If trigger or replacement is missing, attempt direct extraction from correction string
+    if not pattern.get("trigger_pattern") or not pattern.get("replacement"):
+        m1 = re.search(r"replace\s+['\"]?([^'\"]+?)['\"]?\s+with\s+['\"]?([^'\"]+?)['\"]?(?:\.|$|,|;)", correction, re.IGNORECASE)
+        if m1:
+            pattern = {
+                "trigger_pattern": m1.group(1).strip(),
+                "replacement": m1.group(2).strip(),
+                "description": f"Replaces '{m1.group(1).strip()}' with '{m1.group(2).strip()}'."
+            }
+        else:
+            m2 = re.search(r"(?:use|write)\s+['\"]?([^'\"]+?)['\"]?\s+instead\s+of\s+['\"]?([^'\"]+?)['\"]?(?:\.|$|,|;)", correction, re.IGNORECASE)
+            if m2:
+                pattern = {
+                    "trigger_pattern": m2.group(2).strip(),
+                    "replacement": m2.group(1).strip(),
+                    "description": f"Uses '{m2.group(1).strip()}' instead of '{m2.group(2).strip()}'."
+                }
+            else:
+                m3 = re.search(r"change\s+['\"]?([^'\"]+?)['\"]?\s+to\s+['\"]?([^'\"]+?)['\"]?(?:\.|$|,|;)", correction, re.IGNORECASE)
+                if m3:
+                    pattern = {
+                        "trigger_pattern": m3.group(1).strip(),
+                        "replacement": m3.group(2).strip(),
+                        "description": f"Changes '{m3.group(1).strip()}' to '{m3.group(2).strip()}'."
+                    }
+
     contains_case_info = scope_result.get("contains_case_info", False)
     skill_scope = "case-specific" if contains_case_info else "global"
 

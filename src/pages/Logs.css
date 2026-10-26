@@ -1,8 +1,8 @@
-﻿/* Protection Record (Logs) - Full-Width Responsive Layout */
+/* Protection Record (Logs) - Full-Width Responsive Layout */
 .logs-page-container { 
   display: flex; 
   flex-direction: column; 
-  padding: 24px 40px; 
+  padding: 4px 6px 36px 6px; 
   width: 100%;
   max-width: 100%; 
   position: relative; 
@@ -12,12 +12,14 @@
   display: flex; 
   justify-content: space-between; 
   align-items: center; 
-  margin-bottom: 24px; 
+  margin-bottom: 20px; 
   width: 100%;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .logs-page-title { 
-  font-size: 2.2rem; 
+  font-size: 1.8rem; 
   font-weight: 700; 
   color: var(--text-primary); 
 }

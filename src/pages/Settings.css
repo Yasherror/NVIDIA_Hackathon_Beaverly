@@ -1,28 +1,27 @@
-﻿/* Settings Page - Full-Width Single-Column Layout with Top Quick-Jump Cards */
+/* Settings Page - Full-Width Single-Column Layout with Top Quick-Jump Cards */
 .settings-page-container {
   display: flex;
   flex-direction: column;
-  padding: 24px 40px;
+  padding: 4px 6px 60px 6px;
   width: 100%;
   max-width: 100%;
-  padding-bottom: 80px;
 }
 
 .settings-header-wrap {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 14px;
   width: 100%;
 }
 
 .settings-title-group h1 {
-  font-size: 2.2rem;
+  font-size: 1.8rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .settings-title-group p {
