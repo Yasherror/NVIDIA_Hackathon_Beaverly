@@ -506,3 +506,270 @@
   text-align: center;
   gap: 12px;
 }
+
+/* ==========================================================================
+   Full Legal Document Reader Overlay & Paper Styles
+   ========================================================================== */
+
+.doc-reader-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(20, 32, 26, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: caseDocsFadeIn 0.2s ease-out;
+}
+
+.doc-reader-container {
+  background: var(--bg-card, #FCF5EE);
+  border: 1px solid var(--border-light, #EFE3D3);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 960px;
+  height: 92vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 60px -12px rgba(40, 24, 12, 0.35);
+  overflow: hidden;
+  animation: caseDocsScaleUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.doc-reader-header {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border-light, #EFE3D3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FFFFFF;
+}
+
+.doc-reader-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.doc-reader-header-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary, #20332A);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420px;
+}
+
+.doc-reader-header-meta {
+  font-size: 0.74rem;
+  color: var(--text-secondary, #6B7C72);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doc-reader-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doc-reader-tabs {
+  display: flex;
+  background: var(--bg-main, #F5EDDE);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light, #EFE3D3);
+}
+
+.doc-reader-tab-btn {
+  background: none;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary, #6B7C72);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.doc-reader-tab-btn.active {
+  background: #FFFFFF;
+  color: var(--brand-primary, #B37552);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.doc-reader-body {
+  flex: 1;
+  overflow-y: auto;
+  background: #F3ECE1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Paper Sheet Layout */
+.legal-page-sheet {
+  background: #FFFFFF;
+  border: 1px solid #E5D9CB;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 760px;
+  min-height: 800px;
+  padding: 48px 56px;
+  box-shadow: 0 4px 20px -2px rgba(60, 42, 26, 0.12), 0 0 1px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.legal-sheet-header-seal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #20332A;
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+}
+
+.legal-sheet-title-stamp {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #20332A;
+  text-transform: uppercase;
+}
+
+.legal-sheet-page-stamp {
+  font-size: 0.72rem;
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--brand-primary, #B37552);
+}
+
+.legal-sheet-section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--text-primary, #20332A);
+  margin-bottom: 16px;
+  border-left: 3px solid var(--brand-primary, #B37552);
+  padding-left: 10px;
+}
+
+.legal-sheet-text {
+  font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: #242926;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+}
+
+.legal-sheet-footer-bar {
+  margin-top: 36px;
+  padding-top: 12px;
+  border-top: 1px solid #EBE2D5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #8C9991;
+  font-family: monospace;
+}
+
+/* Pager Controls Bar */
+.doc-reader-footer-pager {
+  padding: 10px 24px;
+  background: #FFFFFF;
+  border-top: 1px solid var(--border-light, #EFE3D3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pager-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pager-btn {
+  background: var(--bg-main, #F5EDDE);
+  border: 1px solid var(--border-light, #EFE3D3);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary, #20332A);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pager-btn:hover:not(:disabled) {
+  border-color: var(--brand-primary, #B37552);
+  color: var(--brand-primary, #B37552);
+}
+
+.pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pager-status-pill {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary, #20332A);
+  font-family: monospace;
+}
+
+/* Chunks Viewer Tab */
+.chunks-viewer-list {
+  width: 100%;
+  max-width: 820px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chunk-inspect-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-light, #EFE3D3);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chunk-inspect-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: var(--text-secondary, #6B7C72);
+  font-weight: 600;
+}
+
+.chunk-inspect-text {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #20332A;
+  line-height: 1.5;
+  background: var(--bg-main, #F5EDDE);
+  padding: 10px;
+  border-radius: 6px;
+}
+

@@ -10,13 +10,18 @@ import {
   ShieldCheck, 
   ChevronDown, 
   ChevronUp, 
+  ChevronLeft,
+  ChevronRight,
   X, 
   Layers, 
   Database, 
   Lock,
   CheckCircle2,
   AlertCircle,
-  Download
+  Download,
+  BookOpen,
+  Eye,
+  FileCheck
 } from 'lucide-react';
 import './CaseDocumentsModal.css';
 
@@ -32,9 +37,15 @@ export default function CaseDocumentsModal({
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedDoc, setExpandedDoc] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [summaryMeta, setSummaryMeta] = useState(null);
+
+  // Full Legal Document Reader State
+  const [readingDoc, setReadingDoc] = useState(null);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [readerViewMode, setReaderViewMode] = useState('document'); // 'document' | 'chunks'
 
   useEffect(() => {
     if (isOpen && activeCase?.id) {
@@ -61,6 +72,24 @@ export default function CaseDocumentsModal({
       console.error('Failed to load case documents:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenReader = async (doc) => {
+    setReadingDoc(doc);
+    setPreviewLoading(true);
+    setCurrentPage(1);
+    setReaderViewMode('document');
+    try {
+      const res = await fetch(`http://localhost:8000/api/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(doc.name)}/preview`);
+      if (res.ok) {
+        const data = await res.json();
+        setPreviewData(data);
+      }
+    } catch (err) {
+      console.error('Failed to load document preview:', err);
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -115,6 +144,9 @@ export default function CaseDocumentsModal({
       });
       if (res.ok) {
         setDocuments(prev => prev.filter(d => d.name !== docName));
+        if (readingDoc && readingDoc.name === docName) {
+          setReadingDoc(null);
+        }
         if (onRefreshCase) onRefreshCase();
       }
     } catch (err) {
@@ -135,6 +167,9 @@ export default function CaseDocumentsModal({
     d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (d.sample_snippet && d.sample_snippet.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const activePages = previewData?.pages || [];
+  const currentLegalPage = activePages.find(p => p.page_number === currentPage) || activePages[0];
 
   return (
     <div className="case-docs-overlay" onClick={onClose}>
@@ -291,7 +326,6 @@ export default function CaseDocumentsModal({
               </div>
             ) : (
               filteredDocs.map((doc) => {
-                const isExpanded = expandedDoc === doc.id;
                 const fileType = doc.file_type?.toLowerCase() || 'pdf';
 
                 return (
@@ -315,23 +349,21 @@ export default function CaseDocumentsModal({
                               {doc.chunks_count} vector chunks
                             </span>
                             <span className="case-doc-badge">
-                              {doc.status || 'Indexed & Isolated'}
+                              {doc.status || 'Indexed in LanceDB'}
                             </span>
                           </div>
                         </div>
                       </div>
 
                       <div className="case-doc-actions">
-                        {doc.sample_snippet && (
-                          <button 
-                            className="case-doc-btn"
-                            onClick={() => setExpandedDoc(isExpanded ? null : doc.id)}
-                            title="Preview extracted text chunks"
-                          >
-                            {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                            <span>{isExpanded ? 'Hide' : 'Preview'}</span>
-                          </button>
-                        )}
+                        <button 
+                          className="case-doc-btn"
+                          onClick={() => handleOpenReader(doc)}
+                          title="Read full contract in Legal Document Viewer"
+                        >
+                          <BookOpen size={13} />
+                          <span>Preview</span>
+                        </button>
                         {onSelectDocumentForChat && (
                           <button 
                             className="case-doc-btn"
@@ -363,16 +395,6 @@ export default function CaseDocumentsModal({
                         </button>
                       </div>
                     </div>
-
-                    {/* Collapsible Text Snippet Preview */}
-                    {isExpanded && doc.sample_snippet && (
-                      <div className="case-doc-snippet-box">
-                        <div style={{ fontWeight: 600, marginBottom: 4, color: 'var(--text-primary)' }}>
-                          Sample LanceDB Vector Chunk (Extracted from Page 1):
-                        </div>
-                        {doc.sample_snippet}
-                      </div>
-                    )}
                   </div>
                 );
               })
@@ -391,6 +413,180 @@ export default function CaseDocumentsModal({
           </div>
         </div>
       </div>
+
+      {/* Full Legal Document Reader Modal */}
+      {readingDoc && (
+        <div className="doc-reader-overlay" onClick={() => setReadingDoc(null)}>
+          <div className="doc-reader-container" onClick={(e) => e.stopPropagation()}>
+            {/* Reader Header */}
+            <div className="doc-reader-header">
+              <div className="doc-reader-header-left">
+                <BookOpen size={20} color="var(--brand-primary)" />
+                <div>
+                  <div className="doc-reader-header-title" title={readingDoc.name}>
+                    {readingDoc.name}
+                  </div>
+                  <div className="doc-reader-header-meta">
+                    <span>{readingDoc.privilege || 'Confidential - Attorney-Client Protected'}</span>
+                    <span>&bull;</span>
+                    <span>{readingDoc.size_human}</span>
+                    <span>&bull;</span>
+                    <span>{previewData?.pages_count || readingDoc.pages_count} Pages</span>
+                    <span>&bull;</span>
+                    <span style={{ color: '#2F6B45', fontWeight: 600 }}>OpenShell Sandbox Verified</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="doc-reader-controls">
+                <div className="doc-reader-tabs">
+                  <button 
+                    className={`doc-reader-tab-btn ${readerViewMode === 'document' ? 'active' : ''}`}
+                    onClick={() => setReaderViewMode('document')}
+                  >
+                    Contract View
+                  </button>
+                  <button 
+                    className={`doc-reader-tab-btn ${readerViewMode === 'chunks' ? 'active' : ''}`}
+                    onClick={() => setReaderViewMode('chunks')}
+                  >
+                    AI Chunks ({previewData?.lancedb_chunks?.length || readingDoc.chunks_count})
+                  </button>
+                </div>
+
+                {onSelectDocumentForChat && (
+                  <button 
+                    className="case-doc-btn"
+                    onClick={() => handleAskAboutDoc(readingDoc)}
+                    title="Send contract query to Chat"
+                  >
+                    <MessageSquare size={13} />
+                    <span>Ask AI</span>
+                  </button>
+                )}
+
+                <a 
+                  href={`http://localhost:8000/api/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(readingDoc.name)}/download`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="case-doc-btn"
+                  title="Download raw document"
+                  download={readingDoc.name}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <Download size={13} />
+                  <span>Download</span>
+                </a>
+
+                <button 
+                  className="case-docs-btn-close" 
+                  onClick={() => setReadingDoc(null)}
+                  title="Close document reader"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Reader Body */}
+            <div className="doc-reader-body">
+              {previewLoading ? (
+                <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <RefreshCw size={32} className="spinning" style={{ display: 'block', margin: '0 auto 12px' }} />
+                  <span>Loading full contract clauses and LanceDB embeddings...</span>
+                </div>
+              ) : readerViewMode === 'document' ? (
+                <div className="legal-page-sheet">
+                  <div className="legal-sheet-header-seal">
+                    <span className="legal-sheet-title-stamp">
+                      MATTER: {activeCase?.matter_id || '2026-LEGAL'} &bull; ATTORNEY-CLIENT WORK PRODUCT
+                    </span>
+                    <span className="legal-sheet-page-stamp">
+                      PAGE {currentPage} OF {activePages.length || 1}
+                    </span>
+                  </div>
+
+                  <div className="legal-sheet-section-title">
+                    {currentLegalPage?.title || `Section ${currentPage}`}
+                  </div>
+
+                  <div className="legal-sheet-text">
+                    {currentLegalPage?.content || previewData?.full_text || 'No text content available.'}
+                  </div>
+
+                  <div className="legal-sheet-footer-bar">
+                    <span>OPENSHELL eBPF CONTAINER: /sandboxes/{activeCase?.id}/{readingDoc.name}</span>
+                    <span>BEAVERLY LEGAL VERIFICATION ENGINE</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="chunks-viewer-list">
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+                    Showing all vector chunks indexed in LanceDB for <b>{readingDoc.name}</b>:
+                  </div>
+                  {(previewData?.lancedb_chunks || []).map((ch, idx) => (
+                    <div key={idx} className="chunk-inspect-card">
+                      <div className="chunk-inspect-header">
+                        <span>Chunk #{idx + 1} &bull; Page {ch.page}</span>
+                        <span style={{ color: '#2F6B45' }}>Qwen-4096d Vector Indexed</span>
+                      </div>
+                      <div className="chunk-inspect-text">
+                        {ch.chunk}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Reader Footer with Page Navigator */}
+            {readerViewMode === 'document' && activePages.length > 1 && (
+              <div className="doc-reader-footer-pager">
+                <div className="pager-status-pill">
+                  Reading Page {currentPage} of {activePages.length}
+                </div>
+                <div className="pager-btn-group">
+                  <button 
+                    className="pager-btn"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft size={14} />
+                    <span>Previous Page</span>
+                  </button>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {activePages.map(p => (
+                      <button 
+                        key={p.page_number}
+                        className={`pager-btn ${currentPage === p.page_number ? 'active' : ''}`}
+                        onClick={() => setCurrentPage(p.page_number)}
+                        style={{ 
+                          minWidth: 32, 
+                          padding: '4px 8px',
+                          justifyContent: 'center',
+                          backgroundColor: currentPage === p.page_number ? 'var(--brand-primary)' : 'var(--bg-main)',
+                          color: currentPage === p.page_number ? '#FFFFFF' : 'var(--text-primary)',
+                          borderColor: currentPage === p.page_number ? 'var(--brand-primary)' : 'var(--border-light)'
+                        }}
+                      >
+                        {p.page_number}
+                      </button>
+                    ))}
+                  </div>
+                  <button 
+                    className="pager-btn"
+                    onClick={() => setCurrentPage(p => Math.min(activePages.length, p + 1))}
+                    disabled={currentPage === activePages.length}
+                  >
+                    <span>Next Page</span>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
