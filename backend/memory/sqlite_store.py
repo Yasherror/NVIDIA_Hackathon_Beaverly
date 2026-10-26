@@ -54,6 +54,22 @@ async def init_db():
             )
         """)
 
+        # Skill version history & rollback snapshots (PRD v7.0 P1-1)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS skill_versions (
+                id TEXT PRIMARY KEY,
+                skill_id TEXT NOT NULL,
+                version_number INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                trigger_pattern TEXT,
+                replacement TEXT,
+                category TEXT,
+                learned_from TEXT,
+                change_reason TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # Stream of user corrections used by Hermes Agent to compute occurrence counts
         await db.execute("""
             CREATE TABLE IF NOT EXISTS correction_events (
@@ -142,6 +158,15 @@ async def init_db():
                     ('default_model_super', 'nvidia/nemotron-3-super-120b-a12b'),
                     ('default_model_ultra', 'nvidia/Nemotron-3-Ultra-550b-a55b')
                 """)
+
+        # Seed initial v1 snapshots for any skills lacking versions (PRD P1-1)
+        await db.execute("""
+            INSERT OR IGNORE INTO skill_versions (id, skill_id, version_number, name, trigger_pattern, replacement, category, learned_from, change_reason, created_at)
+            SELECT 
+                s.id || '-v1', s.id, 1, s.name, s.trigger_pattern, s.replacement, s.category, s.learned_from, 'Initial habit established & confirmed', s.created_at
+            FROM skills s
+            WHERE NOT EXISTS (SELECT 1 FROM skill_versions sv WHERE sv.skill_id = s.id)
+        """)
 
         await db.commit()
     logger.info(f"SQLite DB initialized and primed at {DB_PATH}")

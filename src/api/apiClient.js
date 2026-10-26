@@ -1,4 +1,4 @@
-﻿const API_BASE_URL = 'http://localhost:8000/api'; // FastAPI Backend
+const API_BASE_URL = 'http://localhost:8000/api'; // FastAPI Backend
 
 export const apiClient = {
   // GET helper
@@ -42,6 +42,19 @@ export const apiClient = {
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+  },
+
+  async put(endpoint, data = {}) {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const details = await response.json().catch(() => ({}));
+      throw new Error(details.detail || `HTTP error! status: ${response.status}`);
+    }
     return await response.json();
   },
 
