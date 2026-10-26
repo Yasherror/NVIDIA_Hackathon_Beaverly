@@ -556,7 +556,6 @@
   gap: 12px;
   min-width: 0;
   flex: 1 1 auto;
-  max-width: 520px;
 }
 
 .doc-reader-icon-box {
@@ -575,6 +574,7 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .doc-reader-header-title {
@@ -585,7 +585,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 440px;
+  max-width: min(520px, 45vw);
 }
 
 .doc-reader-header-meta {
@@ -593,27 +593,30 @@
   color: var(--text-secondary, #6B7C72);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .doc-reader-privilege-label {
   font-weight: 600;
   color: var(--brand-primary, #B37552);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .doc-reader-meta-dot {
   color: #C5B6A5;
   font-size: 0.7rem;
+  flex-shrink: 0;
 }
 
 .doc-reader-badge-pill {
   background: var(--bg-main, #F5EDDE);
   border: 1px solid var(--border-light, #EFE3D3);
-  padding: 1px 7px;
+  padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.68rem;
   font-weight: 600;
@@ -622,12 +625,14 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .doc-reader-badge-pill.verified {
   background: rgba(47, 107, 69, 0.08);
   color: #2F6B45;
   border-color: rgba(47, 107, 69, 0.25);
+  flex-shrink: 0;
 }
 
 .doc-reader-tabs {
@@ -854,11 +859,11 @@
   .doc-reader-container {
     width: 96vw;
   }
-  .doc-reader-header-left {
-    max-width: 380px;
-  }
   .doc-reader-header-title {
-    max-width: 280px;
+    max-width: 260px;
+  }
+  .doc-reader-privilege-label {
+    max-width: 140px;
   }
   .legal-page-sheet {
     padding: 36px 40px;

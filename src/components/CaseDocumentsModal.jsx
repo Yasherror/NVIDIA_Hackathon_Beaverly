@@ -429,8 +429,8 @@ export default function CaseDocumentsModal({
                     {readingDoc.name}
                   </div>
                   <div className="doc-reader-header-meta">
-                    <span className="doc-reader-privilege-label">
-                      {readingDoc.privilege || 'Confidential Attorney-Client Protected'}
+                    <span className="doc-reader-privilege-label" title={readingDoc.privilege || 'Confidential Attorney-Client Protected'}>
+                      Attorney-Client Privileged
                     </span>
                     <span className="doc-reader-meta-dot">&bull;</span>
                     <span className="doc-reader-badge-pill">{readingDoc.size_human || '1.2 MB'}</span>
