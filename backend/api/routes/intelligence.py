@@ -129,9 +129,14 @@ async def remove_case_document(case_id: str, doc_name: str):
         await db.commit()
     return {"status": "purged", "doc_name": doc_name, "case_id": case_id}
 
+try:
+    from utils.legal_doc_exporter import ensure_valid_binary_document
+except ImportError:
+    from backend.utils.legal_doc_exporter import ensure_valid_binary_document
+
 @router.get("/cases/{case_id}/documents/{doc_name}/download")
 async def download_case_document(case_id: str, doc_name: str):
-    """Download physical document from the case's private OpenShell sandbox."""
+    """Download physical document from the case's private OpenShell sandbox with verified binary format."""
     sandbox_base = getattr(settings, "sandboxes_path", "./sandboxes")
     sandbox_dir = os.path.abspath(os.path.join(sandbox_base, case_id))
     file_path = os.path.abspath(os.path.join(sandbox_dir, doc_name))
@@ -139,7 +144,8 @@ async def download_case_document(case_id: str, doc_name: str):
     # OpenShell sandbox path traversal defense
     if not file_path.startswith(sandbox_dir):
         raise HTTPException(403, "Access denied: unauthorized sandbox path traversal attempt blocked by OpenShell")
-        
+
+    # If file doesn't exist, check database catalog and ensure valid binary
     if not os.path.exists(file_path):
         async with aiosqlite.connect(settings.db_path) as db:
             db.row_factory = aiosqlite.Row
@@ -147,16 +153,35 @@ async def download_case_document(case_id: str, doc_name: str):
                 doc = await cur.fetchone()
         if not doc:
             raise HTTPException(404, "Document not found in case catalog")
-            
-        os.makedirs(sandbox_dir, exist_ok=True)
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(f"BEAVERLY LEGAL EVIDENCE SANDBOX\nMatter: {case_id}\nDocument Name: {doc_name}\nPrivilege: {doc['privilege']}\nOpenShell Status: Isolated & Verified\n\n=== EXTRACTED LEGAL CLAUSES & COVENANTS ===\n{doc['sample_snippet'] or 'Extracted contract content'}\n")
+        snippet = doc['sample_snippet'] if 'sample_snippet' in doc.keys() else ""
+    else:
+        snippet = ""
+
+    # Ensure document is an authentic binary PDF / DOCX (not raw text)
+    ensure_valid_binary_document(file_path, doc_name, case_id, snippet)
+
+    # Determine accurate MIME type
+    ext = os.path.splitext(doc_name)[1].lower()
+    if ext == ".pdf":
+        media_type = "application/pdf"
+    elif ext == ".docx":
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif ext == ".doc":
+        media_type = "application/msword"
+    elif ext == ".xlsx":
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    elif ext == ".txt":
+        media_type = "text/plain; charset=utf-8"
+    else:
+        media_type = "application/octet-stream"
 
     return FileResponse(
         path=file_path,
         filename=doc_name,
-        media_type="application/octet-stream"
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{doc_name}"'}
     )
+
 
 def generate_legal_preview(doc_name: str, case_name: str, snippet: str, chunks: list[dict]):
     """Assemble structured legal pages either from LanceDB chunks or authentic legal contract articles."""

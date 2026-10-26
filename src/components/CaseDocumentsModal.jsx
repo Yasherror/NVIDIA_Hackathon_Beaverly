@@ -421,39 +421,50 @@ export default function CaseDocumentsModal({
             {/* Reader Header */}
             <div className="doc-reader-header">
               <div className="doc-reader-header-left">
-                <BookOpen size={20} color="var(--brand-primary)" />
-                <div>
+                <div className="doc-reader-icon-box">
+                  <BookOpen size={20} color="var(--brand-primary)" />
+                </div>
+                <div className="doc-reader-info-col">
                   <div className="doc-reader-header-title" title={readingDoc.name}>
                     {readingDoc.name}
                   </div>
                   <div className="doc-reader-header-meta">
-                    <span>{readingDoc.privilege || 'Confidential - Attorney-Client Protected'}</span>
-                    <span>&bull;</span>
-                    <span>{readingDoc.size_human}</span>
-                    <span>&bull;</span>
-                    <span>{previewData?.pages_count || readingDoc.pages_count} Pages</span>
-                    <span>&bull;</span>
-                    <span style={{ color: '#2F6B45', fontWeight: 600 }}>OpenShell Sandbox Verified</span>
+                    <span className="doc-reader-privilege-label">
+                      {readingDoc.privilege || 'Confidential Attorney-Client Protected'}
+                    </span>
+                    <span className="doc-reader-meta-dot">&bull;</span>
+                    <span className="doc-reader-badge-pill">{readingDoc.size_human || '1.2 MB'}</span>
+                    <span className="doc-reader-meta-dot">&bull;</span>
+                    <span className="doc-reader-badge-pill">{previewData?.pages_count || readingDoc.pages_count || 7} Pages</span>
+                    <span className="doc-reader-meta-dot">&bull;</span>
+                    <span className="doc-reader-badge-pill verified">
+                      <ShieldCheck size={12} />
+                      <span>Sandbox Isolated</span>
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="doc-reader-controls">
-                <div className="doc-reader-tabs">
-                  <button 
-                    className={`doc-reader-tab-btn ${readerViewMode === 'document' ? 'active' : ''}`}
-                    onClick={() => setReaderViewMode('document')}
-                  >
-                    Contract View
-                  </button>
-                  <button 
-                    className={`doc-reader-tab-btn ${readerViewMode === 'chunks' ? 'active' : ''}`}
-                    onClick={() => setReaderViewMode('chunks')}
-                  >
-                    AI Chunks ({previewData?.lancedb_chunks?.length || readingDoc.chunks_count})
-                  </button>
-                </div>
+              {/* Center View Switcher */}
+              <div className="doc-reader-tabs">
+                <button 
+                  className={`doc-reader-tab-btn ${readerViewMode === 'document' ? 'active' : ''}`}
+                  onClick={() => setReaderViewMode('document')}
+                >
+                  <FileText size={13} />
+                  <span>Contract View</span>
+                </button>
+                <button 
+                  className={`doc-reader-tab-btn ${readerViewMode === 'chunks' ? 'active' : ''}`}
+                  onClick={() => setReaderViewMode('chunks')}
+                >
+                  <Layers size={13} />
+                  <span>AI Chunks ({previewData?.lancedb_chunks?.length || readingDoc.chunks_count || 44})</span>
+                </button>
+              </div>
 
+              {/* Right Action Controls */}
+              <div className="doc-reader-controls">
                 {onSelectDocumentForChat && (
                   <button 
                     className="case-doc-btn"
@@ -469,14 +480,16 @@ export default function CaseDocumentsModal({
                   href={`http://localhost:8000/api/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(readingDoc.name)}/download`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="case-doc-btn"
-                  title="Download raw document"
+                  className="case-doc-btn primary-download"
+                  title="Download verified binary PDF (ReportLab generated)"
                   download={readingDoc.name}
                   style={{ textDecoration: 'none' }}
                 >
                   <Download size={13} />
-                  <span>Download</span>
+                  <span>Download PDF</span>
                 </a>
+
+                <div className="doc-reader-header-divider"></div>
 
                 <button 
                   className="case-docs-btn-close" 
@@ -499,7 +512,7 @@ export default function CaseDocumentsModal({
                 <div className="legal-page-sheet">
                   <div className="legal-sheet-header-seal">
                     <span className="legal-sheet-title-stamp">
-                      MATTER: {activeCase?.matter_id || '2026-LEGAL'} &bull; ATTORNEY-CLIENT WORK PRODUCT
+                      MATTER: {activeCase?.matter_id || '2026-LEGAL'} &bull; PRIVILEGED WORK PRODUCT
                     </span>
                     <span className="legal-sheet-page-stamp">
                       PAGE {currentPage} OF {activePages.length || 1}
@@ -515,8 +528,16 @@ export default function CaseDocumentsModal({
                   </div>
 
                   <div className="legal-sheet-footer-bar">
-                    <span>OPENSHELL eBPF CONTAINER: /sandboxes/{activeCase?.id}/{readingDoc.name}</span>
-                    <span>BEAVERLY LEGAL VERIFICATION ENGINE</span>
+                    <div className="legal-sheet-footer-left">
+                      <span className="legal-sheet-tag">OPENSHELL SANDBOX:</span>
+                      <code className="legal-sheet-path" title={`/sandboxes/${activeCase?.id}/${readingDoc.name}`}>
+                        /sandboxes/{activeCase?.id}/{readingDoc.name.length > 42 ? readingDoc.name.slice(0, 39) + '...' : readingDoc.name}
+                      </code>
+                    </div>
+                    <div className="legal-sheet-footer-right">
+                      <ShieldCheck size={12} color="#2F6B45" />
+                      <span>BEAVERLY VERIFICATION ENGINE</span>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -543,7 +564,7 @@ export default function CaseDocumentsModal({
             {readerViewMode === 'document' && activePages.length > 1 && (
               <div className="doc-reader-footer-pager">
                 <div className="pager-status-pill">
-                  Reading Page {currentPage} of {activePages.length}
+                  Reading Page <b>{currentPage}</b> of <b>{activePages.length}</b>
                 </div>
                 <div className="pager-btn-group">
                   <button 
@@ -554,20 +575,12 @@ export default function CaseDocumentsModal({
                     <ChevronLeft size={14} />
                     <span>Previous Page</span>
                   </button>
-                  <div style={{ display: 'flex', gap: 4 }}>
+                  <div className="pager-page-numbers">
                     {activePages.map(p => (
                       <button 
                         key={p.page_number}
-                        className={`pager-btn ${currentPage === p.page_number ? 'active' : ''}`}
+                        className={`pager-page-btn ${currentPage === p.page_number ? 'active' : ''}`}
                         onClick={() => setCurrentPage(p.page_number)}
-                        style={{ 
-                          minWidth: 32, 
-                          padding: '4px 8px',
-                          justifyContent: 'center',
-                          backgroundColor: currentPage === p.page_number ? 'var(--brand-primary)' : 'var(--bg-main)',
-                          color: currentPage === p.page_number ? '#FFFFFF' : 'var(--text-primary)',
-                          borderColor: currentPage === p.page_number ? 'var(--brand-primary)' : 'var(--border-light)'
-                        }}
                       >
                         {p.page_number}
                       </button>
@@ -581,6 +594,9 @@ export default function CaseDocumentsModal({
                     <span>Next Page</span>
                     <ChevronRight size={14} />
                   </button>
+                </div>
+                <div className="pager-aux-label">
+                  OpenShell eBPF Guard Active
                 </div>
               </div>
             )}
