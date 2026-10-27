@@ -164,7 +164,11 @@ export default function CaseDocumentsModal({
   }, []);
 
   const handleFileUpload = async (file) => {
-    if (!file || !activeCase?.id) return;
+    if (!file) return;
+    if (!activeCase?.id) {
+      setUploadMsg({ type: 'error', text: 'No active matter selected. Please select a client matter first.' });
+      return;
+    }
     const allowed = ['.pdf', '.docx', '.doc', '.txt'];
     const ext = '.' + file.name.split('.').pop().toLowerCase();
     if (!allowed.includes(ext)) {

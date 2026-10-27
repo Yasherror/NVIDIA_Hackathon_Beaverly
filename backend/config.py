@@ -42,7 +42,10 @@ class Settings(BaseSettings):
 
     model_config = {
         "protected_namespaces": (),
-        "env_file": os.path.join(os.path.dirname(__file__), ".env"),
+        "env_file": (
+            os.path.join(os.path.dirname(__file__), ".env"),
+            os.path.join(os.path.dirname(__file__), ".env.example"),
+        ),
         "env_file_encoding": "utf-8",
         "extra": "ignore",
     }
