@@ -35,12 +35,20 @@ export default function Skills() {
     setTimeout(() => setToastMessage(''), 3500);
   };
 
+  const [casesMap, setCasesMap] = useState({});
+
   const fetchSkills = async () => {
     try {
       const data = await apiClient.get('/skills/');
       setSkillsList(data);
+      const casesData = await apiClient.get('/cases/');
+      const map = {};
+      (casesData || []).forEach(c => {
+        map[c.id] = `${c.short_name || c.client_name} (Matter #${c.matter_id ? c.matter_id.replace('MATTER-2026-', '') : c.id})`;
+      });
+      setCasesMap(map);
     } catch (err) {
-      console.error('Failed to load skills:', err);
+      console.error('Failed to load skills or cases:', err);
     } finally {
       setLoading(false);
     }
@@ -148,12 +156,6 @@ export default function Skills() {
     return acc;
   }, {});
 
-  const caseNames = {
-    'case-a': 'Apex v. ABC Holdings (Matter #2025-089A)',
-    'case-b': 'Zenith v. Horizon Maritime (Matter #2025-104B)',
-    'case-c': 'Chen Employment Dispute (Matter #2026-CHEN01)',
-  };
-
   return (
     <div className="skills-page-container">
       {toastMessage && (
@@ -166,11 +168,11 @@ export default function Skills() {
       <div className="skills-top-bar">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 className="skills-page-title">Skills & Memory Library</h1>
-            <span className="p1-feature-badge">PRD P1-1 Versioning & Rollback</span>
+            <h1 className="skills-page-title">Drafting Habits & Knowledge Vault</h1>
+            <span className="p1-feature-badge">Self-Evolving Firm Memory</span>
           </div>
           <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Hermes Agent • Persistent Lawyer Habits vs Strictly Isolated Case Memory with Cryptographic Rollback History
+            Persistent Attorney Habits vs Strictly Isolated Matter Covenants with One-Click Version History
           </p>
         </div>
         <div className="skills-top-right">
@@ -180,7 +182,7 @@ export default function Skills() {
             className="skills-mascot-peek" 
             onError={(e) => { e.target.src = '/src/assets/belawbeaver.jpg'; }}
           />
-          <div className="skills-count-pill">{skillsList.length} skills learned</div>
+          <div className="skills-count-pill">{skillsList.length} habits mastered</div>
         </div>
       </div>
 
@@ -281,7 +283,7 @@ export default function Skills() {
           />
           <div className="skills-divider-tag">
             <Lock size={11} />
-            <span>OPENSHELL CRYPTOGRAPHIC ISOLATION BOUNDARY</span>
+            <span>STRICT ATTORNEY-CLIENT PRIVILEGE BOUNDARY (ZERO CROSS-MATTER LEAKAGE)</span>
           </div>
         </div>
         <div className="skills-divider-line"></div>
@@ -291,21 +293,21 @@ export default function Skills() {
       <div className="skills-section">
         <div className="skills-section-header">
           <Lock size={24} color="var(--brand-primary)" />
-          <span>Case-Specific Memory <span className="skills-section-subtitle">— isolated to designated matter (purged on case closure)</span></span>
+          <span>Matter-Specific Knowledge <span className="skills-section-subtitle">— strictly isolated to designated matter (permanently purged on case closure)</span></span>
         </div>
 
         {Object.keys(caseGroups).length === 0 ? (
           <div style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem', padding: '16px' }}>
-            No case-specific memories yet. Tagging a corporate entity in chat stores it here exclusively.
+            No matter-specific memories yet. Defining a party designation in chat stores it here exclusively.
           </div>
         ) : (
           Object.entries(caseGroups).map(([caseId, groupSkills]) => (
             <div key={caseId} className="case-group" style={{ marginBottom: '24px' }}>
               <div className="case-group-header">
                 <ChevronDown size={20} />
-                <span>{caseNames[caseId] || `Matter Container: ${caseId}`}</span>
+                <span>{casesMap[caseId] || `Matter Container: ${caseId}`}</span>
                 <span style={{ fontSize: '0.72rem', marginLeft: 'auto', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#f2e8dc', color: 'var(--brand-primary)', fontWeight: 700 }}>
-                  OpenShell Sandboxed
+                  Privilege Sandboxed
                 </span>
               </div>
               <div className="skills-grid three-cols">

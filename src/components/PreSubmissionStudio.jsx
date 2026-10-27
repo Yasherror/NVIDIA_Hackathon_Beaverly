@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, AlertCircle, AlertTriangle, CheckCircle2, 
   ArrowRight, FileText, Sparkles, Copy, Check, RotateCcw, 
-  X, Loader2, ExternalLink, Send
+  X, Loader2, ExternalLink, Send, BookOpen, Filter
 } from 'lucide-react';
 import { apiClient } from '../api/apiClient';
 import './PreSubmissionStudio.css';
 
 const DEFAULT_SAMPLE = {
   id: 'sample-termination',
-  title: 'Notice of Termination (Date & Severance Mismatches)',
+  title: 'Notice of Termination (Compensation & Date Mismatch)',
   draft_text: 
 `NOTICE OF EMPLOYMENT TERMINATION
 
@@ -32,26 +32,26 @@ Apex Global Legal Department`
 const PIPELINE_STEPS = [
   {
     step: 1,
-    title: 'Extracting Claims & Fact Entities',
-    desc: 'Scanning dates, monetary amounts, parties & section citations in draft',
+    title: 'Scanning Draft for Key Claims',
+    desc: 'Extracting dates, compensation terms, corporate entities & section references',
     threshold: 22
   },
   {
     step: 2,
-    title: 'Querying LanceDB Matter Vector Space',
-    desc: 'Cosine semantic search on 4096-dim Qwen3-Embedding-8B index',
+    title: 'Retrieving Executed Records from Matter Vault',
+    desc: 'Scanning signed contracts, board consents & exhibits in this matter',
     threshold: 52
   },
   {
     step: 3,
-    title: 'Cross-Examining Contract with Nemotron Super 120B',
-    desc: 'Evaluating contradiction probabilities against executed contract clauses',
+    title: 'Cross-Examining Draft with Nemotron Legal Engine',
+    desc: 'Testing every draft assertion against verified contract clauses',
     threshold: 82
   },
   {
     step: 4,
-    title: 'Synthesizing Provenance Citations & Diffs',
-    desc: 'Generating exact section citations and one-click replacement patches',
+    title: 'Pinpointing Discrepancies & Correction Patches',
+    desc: 'Preparing clause citations, factual explanations and one-click fixes',
     threshold: 96
   }
 ];
@@ -64,7 +64,6 @@ export default function PreSubmissionStudio({
   onSendToChat 
 }) {
   const [draftText, setDraftText] = useState(initialDraft || DEFAULT_SAMPLE.draft_text);
-  const [viewMode, setViewMode] = useState('edit'); // 'edit' | 'preview'
   const [samples, setSamples] = useState([DEFAULT_SAMPLE]);
   const [activeSampleId, setActiveSampleId] = useState(DEFAULT_SAMPLE.id);
   const [findings, setFindings] = useState([]);
@@ -73,6 +72,26 @@ export default function PreSubmissionStudio({
   const [progressPercent, setProgressPercent] = useState(15);
   const [auditMeta, setAuditMeta] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  // Verification Source (Ground Truth Document Selection)
+  const [caseDocs, setCaseDocs] = useState([]);
+  const [selectedDocFilter, setSelectedDocFilter] = useState('all');
+
+  // Load matter documents for the Ground Truth selector
+  useEffect(() => {
+    async function fetchCaseDocs() {
+      if (!activeCase?.id) return;
+      try {
+        const res = await apiClient.get(`/intelligence/cases/${activeCase.id}/documents`);
+        setCaseDocs(res.documents || []);
+      } catch (err) {
+        console.error('Failed to load matter documents:', err);
+      }
+    }
+    if (isOpen) {
+      fetchCaseDocs();
+    }
+  }, [isOpen, activeCase?.id]);
 
   // Fetch sample drafts on mount
   useEffect(() => {
@@ -97,8 +116,8 @@ export default function PreSubmissionStudio({
     }
   }, [initialDraft]);
 
-  // Run audit whenever draftText changes or modal opens
-  const runAudit = async (textToAudit = draftText) => {
+  // Run audit against selected ground truth scope
+  const runAudit = async (textToAudit = draftText, docFilter = selectedDocFilter) => {
     if (!textToAudit.trim()) {
       setFindings([]);
       setAuditMeta(null);
@@ -114,17 +133,19 @@ export default function PreSubmissionStudio({
     const stepTimer3 = setTimeout(() => { setAuditStep(3); setProgressPercent(92); }, 6800);
 
     try {
-      const caseId = activeCase?.id || 'case-8b0bb87e';
+      const caseId = activeCase?.id || '';
       const res = await apiClient.post('/verification/verify', {
         case_id: caseId,
-        draft_text: textToAudit
+        draft_text: textToAudit,
+        doc_filter: docFilter !== 'all' ? docFilter : null
       });
 
       setAuditMeta({
-        job_id: res.job_id || 'nebius-job-local',
-        engine: res.engine || 'Nebius Serverless Jobs + Nemotron Super',
+        job_id: res.job_id || 'verified-record',
+        engine: 'Nemotron Super Legal Reasoner',
         latency_ms: res.latency_ms || 180,
-        note: res.note || ''
+        note: res.note || '',
+        docFilter: docFilter
       });
 
       // Mark which mismatches are currently present in draft text
@@ -147,17 +168,23 @@ export default function PreSubmissionStudio({
     }
   };
 
-  // Run initial audit on open
+  // Run initial audit on open or when initialDraft is provided
   useEffect(() => {
     if (isOpen) {
-      runAudit(draftText);
+      const activeText = (initialDraft && initialDraft.trim().length > 0) ? initialDraft : draftText;
+      runAudit(activeText, selectedDocFilter);
     }
-  }, [isOpen]);
+  }, [isOpen, initialDraft]);
+
+  const handleDocFilterChange = (newDoc) => {
+    setSelectedDocFilter(newDoc);
+    runAudit(draftText, newDoc);
+  };
 
   const handleSelectSample = (sample) => {
     setActiveSampleId(sample.id);
     setDraftText(sample.draft_text);
-    runAudit(sample.draft_text);
+    runAudit(sample.draft_text, selectedDocFilter);
   };
 
   const handleApplyFix = (mismatch) => {
@@ -205,18 +232,18 @@ export default function PreSubmissionStudio({
             <div className="studio-title-block">
               <h2>
                 Pre-Submission Fact Verification Studio
-                <span className="studio-badge-p0">PRD P0-4</span>
+                <span className="studio-badge-p0">Pre-Filing Protection</span>
               </h2>
               <div className="studio-subtitle">
-                Matter: <b>{activeCase?.short_name || activeCase?.client_name || 'Apex Global Executive Dispute'}</b> • Sandbox Isolation Enforced
+                Matter: <b>{activeCase?.short_name || activeCase?.client_name || 'Active Matter'}</b> • Strict Privilege Vault
               </div>
             </div>
           </div>
 
           <div className="studio-header-right">
-            <div className="studio-engine-pill" title="Batched background fact verifier powered by Nebius">
+            <div className="studio-engine-pill" title="Fact-checking legal engine powered by NVIDIA Nemotron">
               <span className="studio-engine-dot" />
-              <span>Nebius Serverless Jobs • Nemotron Super</span>
+              <span>NVIDIA Nemotron Super Legal Engine</span>
             </div>
             <button className="studio-btn-close" onClick={onClose} title="Close Studio">
               <X size={18} />
@@ -224,9 +251,42 @@ export default function PreSubmissionStudio({
           </div>
         </div>
 
+        {/* Ground Truth Source Selector Bar (Choose check what doc) */}
+        <div className="studio-source-bar">
+          <div className="studio-source-left">
+            <div className="studio-source-badge">
+              <BookOpen size={16} />
+              <span>Cross-Examine Against:</span>
+            </div>
+            <select
+              className="studio-doc-select"
+              value={selectedDocFilter}
+              onChange={(e) => handleDocFilterChange(e.target.value)}
+              disabled={isAuditing}
+              title="Choose specific executed agreement or scan all vault documents"
+            >
+              <option value="all">
+                ● All Executed Matter Records ({caseDocs.length} document{caseDocs.length === 1 ? '' : 's'} in vault)
+              </option>
+              {caseDocs.map((d) => (
+                <option key={d.name} value={d.name}>
+                  📄 {d.name} ({d.file_type ? d.file_type.toUpperCase() : 'PDF'})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="studio-source-right">
+            <span className="studio-source-status">
+              <ShieldCheck size={14} color="#27ae60" />
+              <span>Privileged Vault Active • Zero Data Sharing</span>
+            </span>
+          </div>
+        </div>
+
         {/* Preset Drafts Bar */}
         <div className="studio-preset-bar">
-          <span className="studio-preset-label">Test Scenarios:</span>
+          <span className="studio-preset-label">Sample Draft Scenarios:</span>
           {samples.map((s) => (
             <button
               key={s.id}
@@ -255,7 +315,7 @@ export default function PreSubmissionStudio({
             <div className="studio-pane-header">
               <div className="studio-pane-title">
                 <FileText size={16} />
-                <span>Draft Document</span>
+                <span>Draft Under Review (Outgoing Document)</span>
               </div>
               <div className="studio-pane-meta">
                 {draftText.trim().split(/\s+/).filter(Boolean).length} words • {draftText.length} characters
@@ -283,9 +343,14 @@ export default function PreSubmissionStudio({
                 <button 
                   className="studio-btn-subtle" 
                   onClick={() => {
-                    const sample = samples.find(s => s.id === activeSampleId) || DEFAULT_SAMPLE;
-                    setDraftText(sample.draft_text);
-                    runAudit(sample.draft_text);
+                    if (activeSampleId === 'custom' && initialDraft) {
+                      setDraftText(initialDraft);
+                      runAudit(initialDraft, selectedDocFilter);
+                    } else {
+                      const sample = samples.find(s => s.id === activeSampleId) || DEFAULT_SAMPLE;
+                      setDraftText(sample.draft_text);
+                      runAudit(sample.draft_text, selectedDocFilter);
+                    }
                   }}
                   title="Reset to initial scenario"
                 >
@@ -308,7 +373,7 @@ export default function PreSubmissionStudio({
             <div className="studio-pane-header">
               <div className="studio-pane-title">
                 <AlertCircle size={16} color="var(--brand-primary)" />
-                <span>Matter Fact Audit</span>
+                <span>Fact Contradictions & Discrepancies</span>
               </div>
               <div className="studio-pane-meta">
                 {unresolvedCount > 0 ? (
@@ -317,7 +382,7 @@ export default function PreSubmissionStudio({
                   </span>
                 ) : (
                   <span style={{ color: '#27ae60', fontWeight: 700 }}>
-                    ✓ 0 Discrepancies
+                    ✓ 0 Discrepancies (Passed)
                   </span>
                 )}
               </div>
@@ -329,7 +394,7 @@ export default function PreSubmissionStudio({
                   <div className="pipeline-header">
                     <div className="pipeline-title-group">
                       <Loader2 size={18} className="spinner" style={{ animation: 'spin 1s linear infinite', color: 'var(--brand-primary)' }} />
-                      <span className="pipeline-title">Nebius Serverless Fact Verification</span>
+                      <span className="pipeline-title">Fact Verification Pipeline</span>
                     </div>
                     <span className="pipeline-progress-badge">{progressPercent}%</span>
                   </div>
@@ -371,7 +436,7 @@ export default function PreSubmissionStudio({
 
                   <div className="pipeline-live-ticker">
                     <Sparkles size={13} color="var(--brand-primary)" />
-                    <span>Engine: Nebius Serverless Jobs • Model: Nemotron Super 120B</span>
+                    <span>Legal Reasoner: NVIDIA Nemotron Super • Client Matter Vault</span>
                   </div>
                 </div>
               ) : findings.length === 0 || unresolvedCount === 0 ? (
@@ -379,7 +444,7 @@ export default function PreSubmissionStudio({
                   <CheckCircle2 size={44} color="var(--success-dot)" />
                   <div className="studio-clean-title">All Draft Facts Corroborated</div>
                   <div className="studio-clean-desc">
-                    Every date, monetary threshold, and corporate party name in this draft precisely matches the executed documents in the matter repository.
+                    Every date, monetary threshold, corporate party name, and covenant in this draft precisely matches the executed documents in the matter repository.
                   </div>
                 </div>
               ) : (
@@ -402,9 +467,15 @@ export default function PreSubmissionStudio({
                     </div>
 
                     <div className="finding-diff-row">
-                      <span className="finding-token-draft">{item.draft_value}</span>
-                      <ArrowRight size={14} color="var(--text-tertiary)" />
-                      <span className="finding-token-record">{item.correct_value}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#c0392b', textTransform: 'uppercase' }}>Draft Claim:</span>
+                        <span className="finding-token-draft">{item.draft_value}</span>
+                      </div>
+                      <ArrowRight size={14} color="var(--text-tertiary)" style={{ alignSelf: 'center', marginTop: 12 }} />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#27ae60', textTransform: 'uppercase' }}>Executed Record:</span>
+                        <span className="finding-token-record">{item.correct_value}</span>
+                      </div>
                     </div>
 
                     <div className="finding-explanation">
@@ -413,7 +484,7 @@ export default function PreSubmissionStudio({
 
                     <div className="finding-citation">
                       <FileText size={13} color="var(--brand-primary)" />
-                      <span>Source:</span>
+                      <span style={{ fontWeight: 600 }}>Contract Clause Evidence:</span>
                       <span className="citation-link">{item.source_doc}</span>
                     </div>
 
@@ -424,7 +495,7 @@ export default function PreSubmissionStudio({
                         title={`Replace '${item.draft_value}' with '${item.correct_value}' in draft`}
                       >
                         <Check size={14} />
-                        <span>Apply Correction</span>
+                        <span>Apply Correction to Draft</span>
                       </button>
                     )}
                   </div>
@@ -439,11 +510,11 @@ export default function PreSubmissionStudio({
           <div className="studio-footer-meta">
             {auditMeta && (
               <>
-                <span>Job ID: <code style={{ fontFamily: 'monospace' }}>{auditMeta.job_id}</code></span>
+                <span>Source: <b>{auditMeta.docFilter && auditMeta.docFilter !== 'all' ? auditMeta.docFilter : 'All Vault Documents'}</b></span>
                 <span>•</span>
-                <span>Latency: {auditMeta.latency_ms}ms</span>
+                <span>Audit Status: <b>{auditMeta.note || 'Cross-checked against matter vault'}</b></span>
                 <span>•</span>
-                <span>Audit Logs: Saved to <code style={{ fontFamily: 'monospace' }}>protection_logs</code></span>
+                <span>Privilege Vault: <b>Zero Data Sharing</b></span>
               </>
             )}
           </div>
@@ -451,18 +522,18 @@ export default function PreSubmissionStudio({
           <div className="studio-footer-actions">
             <button 
               className="btn-run-audit" 
-              onClick={() => runAudit(draftText)}
+              onClick={() => runAudit(draftText, selectedDocFilter)}
               disabled={isAuditing || !draftText.trim()}
             >
               {isAuditing ? (
                 <>
                   <Loader2 size={16} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
-                  <span>Auditing Step {auditStep + 1}/4...</span>
+                  <span>Cross-Examining Contract Terms...</span>
                 </>
               ) : (
                 <>
                   <ShieldCheck size={16} />
-                  <span>Run Nebius Audit</span>
+                  <span>Verify Draft Facts</span>
                 </>
               )}
             </button>

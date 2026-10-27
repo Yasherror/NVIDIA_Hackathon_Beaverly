@@ -3,8 +3,11 @@ Beaverly - FastAPI Backend Entry Point
 Private AI assistant for solo lawyers and small firms.
 Core Formula: Learn → Scope → Remember → Apply → Verify
 """
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from loguru import logger
 
@@ -68,3 +71,27 @@ async def health_check():
             "super": app_config.model_super,
         }
     }
+
+
+# --- Unified Single-Port SPA Serving (Production) ---
+dist_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dist")
+if os.path.exists(dist_dir) and os.path.isdir(dist_dir):
+    assets_dir = os.path.join(dist_dir, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        if full_path.startswith("api/") or full_path == "api" or full_path in ("docs", "redoc", "openapi.json"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Not Found")
+
+        target = os.path.join(dist_dir, full_path)
+        if full_path and os.path.isfile(target):
+            return FileResponse(target)
+
+        index_file = os.path.join(dist_dir, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Frontend index.html not found")

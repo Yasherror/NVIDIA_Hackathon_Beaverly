@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FolderOpen, 
   FileText, 
@@ -21,24 +21,61 @@ import {
   Download,
   BookOpen,
   Eye,
-  FileCheck
+  FileCheck,
+  Check,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import './CaseDocumentsModal.css';
+import { API_BASE_URL } from '../api/apiClient';
+
+const UPLOAD_STAGES = [
+  {
+    shortLabel: 'Sandbox Upload',
+    label: 'Uploading to OpenShell Sandbox',
+    detail: 'Transferring file into isolated container /sandboxes/...',
+  },
+  {
+    shortLabel: 'Clause Parsing',
+    label: 'Extracting Legal Clauses & Structure',
+    detail: 'Detecting section titles, indemnities, covenants & exhibits...',
+  },
+  {
+    shortLabel: 'Vectorizing',
+    label: 'Computing Qwen Vector Embeddings',
+    detail: 'Generating 4096-dimensional dense vector embeddings...',
+  },
+  {
+    shortLabel: 'LanceDB Index',
+    label: 'Persisting to Private LanceDB Store',
+    detail: 'Writing vector chunks & indexing for sub-second semantic retrieval...',
+  }
+];
 
 export default function CaseDocumentsModal({
   isOpen,
   onClose,
   activeCase,
   onSelectDocumentForChat,
+  onOpenFactCheckStudio,
   onRefreshCase
 }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState(0);
+  const [uploadElapsed, setUploadElapsed] = useState(0);
+  const [uploadingFile, setUploadingFile] = useState(null);
+  const [uploadSuccessResult, setUploadSuccessResult] = useState(null);
+  const uploadTimerRef = useRef(null);
   const [uploadMsg, setUploadMsg] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [summaryMeta, setSummaryMeta] = useState(null);
+  const [downloadingDoc, setDownloadingDoc] = useState(null);
+  const [deletingDoc, setDeletingDoc] = useState(null);
+  const [confirmDeleteDoc, setConfirmDeleteDoc] = useState(null);
 
   // Full Legal Document Reader State
   const [readingDoc, setReadingDoc] = useState(null);
@@ -46,6 +83,32 @@ export default function CaseDocumentsModal({
   const [previewLoading, setPreviewLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [readerViewMode, setReaderViewMode] = useState('document'); // 'document' | 'chunks'
+
+  const handleDownload = async (doc) => {
+    if (!doc || !activeCase?.id) return;
+    setDownloadingDoc(doc.name);
+    try {
+      const url = `${API_BASE_URL}/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(doc.name)}/download`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      let cleanName = decodeURIComponent(doc.name).trim();
+      if (!cleanName.includes('.')) cleanName += '.pdf';
+      a.download = cleanName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      console.error('Download error:', err);
+      window.open(`${API_BASE_URL}/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(doc.name)}/download`, '_blank');
+    } finally {
+      setDownloadingDoc(null);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && activeCase?.id) {
@@ -57,7 +120,7 @@ export default function CaseDocumentsModal({
     if (!activeCase?.id) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/intelligence/cases/${activeCase.id}/documents`);
+      const res = await fetch(`${API_BASE_URL}/intelligence/cases/${activeCase.id}/documents`);
       if (res.ok) {
         const data = await res.json();
         setDocuments(data.documents || []);
@@ -81,7 +144,7 @@ export default function CaseDocumentsModal({
     setCurrentPage(1);
     setReaderViewMode('document');
     try {
-      const res = await fetch(`http://localhost:8000/api/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(doc.name)}/preview`);
+      const res = await fetch(`${API_BASE_URL}/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(doc.name)}/preview`);
       if (res.ok) {
         const data = await res.json();
         setPreviewData(data);
@@ -93,6 +156,13 @@ export default function CaseDocumentsModal({
     }
   };
 
+  // Cleanup upload interval on unmount
+  useEffect(() => {
+    return () => {
+      if (uploadTimerRef.current) clearInterval(uploadTimerRef.current);
+    };
+  }, []);
+
   const handleFileUpload = async (file) => {
     if (!file || !activeCase?.id) return;
     const allowed = ['.pdf', '.docx', '.doc', '.txt'];
@@ -102,44 +172,93 @@ export default function CaseDocumentsModal({
       return;
     }
 
+    const sizeHuman = file.size > 1024 * 1024 
+      ? (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+      : Math.max(1, Math.round(file.size / 1024)) + ' KB';
+
+    setUploadingFile({
+      name: file.name,
+      sizeHuman,
+      ext: ext.replace('.', '').toUpperCase()
+    });
     setUploading(true);
-    setUploadMsg({ type: 'info', text: `Ingesting "${file.name}" & computing LanceDB vector embeddings...` });
+    setUploadProgress(12);
+    setUploadStage(0);
+    setUploadElapsed(0);
+    setUploadSuccessResult(null);
+    setUploadMsg(null);
+
+    if (uploadTimerRef.current) clearInterval(uploadTimerRef.current);
+    const startTime = Date.now();
+    uploadTimerRef.current = setInterval(() => {
+      const elapsedSec = (Date.now() - startTime) / 1000;
+      setUploadElapsed(elapsedSec);
+
+      if (elapsedSec < 1.0) {
+        setUploadStage(0);
+        setUploadProgress(12 + elapsedSec * 16);
+      } else if (elapsedSec < 2.5) {
+        setUploadStage(1);
+        setUploadProgress(28 + (elapsedSec - 1.0) * 18);
+      } else if (elapsedSec < 5.0) {
+        setUploadStage(2);
+        setUploadProgress(55 + (elapsedSec - 2.5) * 11);
+      } else {
+        setUploadStage(3);
+        setUploadProgress(prev => Math.min(94, prev + 0.35));
+      }
+    }, 100);
 
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch(`http://localhost:8000/api/intelligence/cases/${activeCase.id}/documents`, {
+      const res = await fetch(`${API_BASE_URL}/intelligence/cases/${activeCase.id}/documents`, {
         method: 'POST',
         body: formData
       });
 
+      if (uploadTimerRef.current) clearInterval(uploadTimerRef.current);
+
       if (res.ok) {
         const result = await res.json();
-        setUploadMsg({ 
-          type: 'success', 
-          text: `"${file.name}" embedded into private LanceDB index (${result.chunks || 0} chunks).` 
+        setUploadProgress(100);
+        setUploadStage(3);
+        setUploadSuccessResult({
+          chunks: result.chunks || 0,
+          name: file.name
         });
+
         fetchDocuments();
         if (onRefreshCase) onRefreshCase();
+
+        setTimeout(() => {
+          setUploading(false);
+          setUploadingFile(null);
+          setUploadSuccessResult(null);
+          setUploadMsg({ 
+            type: 'success', 
+            text: `"${file.name}" embedded into private LanceDB index (${result.chunks || 0} chunks).` 
+          });
+        }, 1300);
       } else {
         const err = await res.json().catch(() => ({}));
+        setUploading(false);
+        setUploadingFile(null);
         setUploadMsg({ type: 'error', text: err.detail || 'Upload failed' });
       }
     } catch (err) {
-      setUploadMsg({ type: 'error', text: `Upload error: ${err.message}` });
-    } finally {
+      if (uploadTimerRef.current) clearInterval(uploadTimerRef.current);
       setUploading(false);
+      setUploadingFile(null);
+      setUploadMsg({ type: 'error', text: `Upload error: ${err.message}` });
     }
   };
 
   const handleDelete = async (docName) => {
-    if (!window.confirm(`Are you sure you want to purge "${docName}" from this matter's private vector table?`)) {
-      return;
-    }
-
+    setDeletingDoc(docName);
     try {
-      const res = await fetch(`http://localhost:8000/api/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(docName)}`, {
+      const res = await fetch(`${API_BASE_URL}/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(docName)}`, {
         method: 'DELETE'
       });
       if (res.ok) {
@@ -147,10 +266,18 @@ export default function CaseDocumentsModal({
         if (readingDoc && readingDoc.name === docName) {
           setReadingDoc(null);
         }
+        setConfirmDeleteDoc(null);
+        setUploadMsg({ type: 'success', text: `Document "${docName}" successfully purged from case vector store.` });
         if (onRefreshCase) onRefreshCase();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setUploadMsg({ type: 'error', text: `Delete failed: ${errData.detail || res.statusText}` });
       }
     } catch (err) {
       console.error('Failed to purge document:', err);
+      setUploadMsg({ type: 'error', text: `Network error deleting document: ${err.message}` });
+    } finally {
+      setDeletingDoc(null);
     }
   };
 
@@ -232,13 +359,13 @@ export default function CaseDocumentsModal({
 
           {/* Upload Dropzone */}
           <div 
-            className={`case-docs-upload-box ${isDragOver ? 'dragover' : ''}`}
-            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            className={`case-docs-upload-box ${isDragOver ? 'dragover' : ''} ${uploading ? 'is-uploading' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); if (!uploading) setIsDragOver(true); }}
             onDragLeave={() => setIsDragOver(false)}
             onDrop={(e) => {
               e.preventDefault();
               setIsDragOver(false);
-              if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+              if (!uploading && e.dataTransfer.files && e.dataTransfer.files[0]) {
                 handleFileUpload(e.dataTransfer.files[0]);
               }
             }}
@@ -255,10 +382,101 @@ export default function CaseDocumentsModal({
               disabled={uploading}
             />
             {uploading ? (
-              <div className="case-docs-uploading-indicator">
-                <RefreshCw size={20} className="spinning" />
-                <span>Ingesting document into case vector store...</span>
-              </div>
+              uploadSuccessResult ? (
+                <div className="case-docs-upload-completed">
+                  <div className="case-docs-completed-icon">
+                    <CheckCircle2 size={24} color="#2F6B45" />
+                  </div>
+                  <div className="case-docs-completed-info">
+                    <div className="case-docs-completed-title">Document Ingestion Complete!</div>
+                    <div className="case-docs-completed-sub">
+                      "{uploadSuccessResult.name}" indexed with {uploadSuccessResult.chunks} searchable clauses in LanceDB.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="case-docs-uploading-card">
+                  {/* Top File & Timer Header */}
+                  <div className="case-docs-uploading-header">
+                    <div className="case-docs-uploading-file-info">
+                      <div className="case-docs-uploading-icon-wrap">
+                        <Loader2 size={20} className="spinning" />
+                      </div>
+                      <div className="case-docs-uploading-details">
+                        <div className="case-docs-uploading-filename-row">
+                          <span className="case-docs-uploading-filename" title={uploadingFile?.name}>
+                            {uploadingFile?.name || 'Document'}
+                          </span>
+                          <span className="case-docs-uploading-ext-badge">
+                            {uploadingFile?.ext || 'PDF'}
+                          </span>
+                          <span className="case-docs-uploading-status-pill">
+                            <span className="case-docs-pulse-dot"></span>
+                            INGESTING
+                          </span>
+                        </div>
+                        <div className="case-docs-uploading-sub">
+                          <span>{uploadingFile?.sizeHuman}</span>
+                          <span>&bull;</span>
+                          <span className="case-docs-active-stage-label">
+                            {UPLOAD_STAGES[uploadStage]?.label || 'Processing...'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="case-docs-uploading-metrics">
+                      <div className="case-docs-uploading-percent">{Math.round(uploadProgress)}%</div>
+                      <div className="case-docs-uploading-timer">
+                        <span>⏱</span>
+                        <span>{uploadElapsed.toFixed(1)}s</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Animated Progress Bar */}
+                  <div className="case-docs-dynamic-progress-bar">
+                    <div 
+                      className="case-docs-dynamic-progress-fill" 
+                      style={{ width: `${Math.min(100, Math.max(6, uploadProgress))}%` }}
+                    >
+                      <div className="case-docs-dynamic-progress-shimmer"></div>
+                    </div>
+                  </div>
+
+                  {/* 4 Pipeline Stages */}
+                  <div className="case-docs-pipeline-steps">
+                    {UPLOAD_STAGES.map((stg, idx) => {
+                      const isPast = idx < uploadStage;
+                      const isCurrent = idx === uploadStage;
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`case-docs-step-item ${isPast ? 'completed' : ''} ${isCurrent ? 'active' : ''}`}
+                        >
+                          <div className="case-docs-step-dot">
+                            {isPast ? (
+                              <Check size={11} strokeWidth={3} />
+                            ) : isCurrent ? (
+                              <span className="case-docs-step-pulsar"></span>
+                            ) : (
+                              <span className="case-docs-step-num">{idx + 1}</span>
+                            )}
+                          </div>
+                          <span className="case-docs-step-text">{stg.shortLabel}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Pipeline Terminal Detail Strip */}
+                  <div className="case-docs-pipeline-terminal">
+                    <ShieldCheck size={13} color="#2F6B45" />
+                    <span className="terminal-prefix">[OpenShell Engine]</span>
+                    <span className="terminal-text">{UPLOAD_STAGES[uploadStage]?.detail || 'Processing document...'}</span>
+                  </div>
+                </div>
+              )
             ) : (
               <>
                 <div className="case-docs-upload-icon">
@@ -274,20 +492,29 @@ export default function CaseDocumentsModal({
             )}
           </div>
 
-          {uploadMsg && (
+          {uploadMsg && !uploading && (
             <div style={{
               padding: '8px 12px',
               borderRadius: '8px',
               fontSize: '0.8rem',
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
+              justifyContent: 'space-between',
               backgroundColor: uploadMsg.type === 'error' ? 'rgba(192, 57, 43, 0.1)' : 'rgba(47, 107, 69, 0.1)',
               color: uploadMsg.type === 'error' ? '#C0392B' : '#2F6B45',
               border: `1px solid ${uploadMsg.type === 'error' ? 'rgba(192, 57, 43, 0.25)' : 'rgba(47, 107, 69, 0.25)'}`
             }}>
-              {uploadMsg.type === 'error' ? <AlertCircle size={15} /> : <CheckCircle2 size={15} />}
-              <span>{uploadMsg.text}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {uploadMsg.type === 'error' ? <AlertCircle size={15} /> : <CheckCircle2 size={15} />}
+                <span>{uploadMsg.text}</span>
+              </div>
+              <button 
+                onClick={() => setUploadMsg(null)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', padding: 2 }}
+                title="Dismiss message"
+              >
+                <X size={14} />
+              </button>
             </div>
           )}
 
@@ -346,10 +573,10 @@ export default function CaseDocumentsModal({
                             <span>&bull;</span>
                             <span className="case-doc-badge indexed">
                               <Layers size={11} style={{ display: 'inline', marginRight: 3 }} />
-                              {doc.chunks_count} vector chunks
+                              {doc.chunks_count} searchable clauses
                             </span>
                             <span className="case-doc-badge">
-                              {doc.status || 'Indexed in LanceDB'}
+                              {doc.status === 'Indexed in LanceDB' ? 'Verified in Matter Vault' : (doc.status || 'Verified in Vault')}
                             </span>
                           </div>
                         </div>
@@ -374,25 +601,58 @@ export default function CaseDocumentsModal({
                             <span>Ask AI</span>
                           </button>
                         )}
-                        <a 
-                          href={`http://localhost:8000/api/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(doc.name)}/download`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="case-doc-btn"
-                          title="Download or view raw file from case sandbox"
-                          download={doc.name}
-                          style={{ textDecoration: 'none' }}
-                        >
-                          <Download size={13} />
-                          <span>Download</span>
-                        </a>
+                        {onOpenFactCheckStudio && (
+                          <button 
+                            className="case-doc-btn"
+                            onClick={() => onOpenFactCheckStudio(doc.sample_snippet || '')}
+                            title="Audit or fact check in Pre-Submission Studio"
+                            style={{ color: '#d97706', borderColor: 'rgba(217, 119, 6, 0.4)' }}
+                          >
+                            <ShieldCheck size={13} color="#d97706" />
+                            <span>Fact Check</span>
+                          </button>
+                        )}
                         <button 
-                          className="case-doc-btn danger"
-                          onClick={() => handleDelete(doc.name)}
-                          title="Purge document from vector store"
+                          className="case-doc-btn"
+                          onClick={() => handleDownload(doc)}
+                          title="Download verified PDF document"
+                          disabled={downloadingDoc === doc.name}
                         >
-                          <Trash2 size={13} />
+                          {downloadingDoc === doc.name ? (
+                            <RefreshCw size={13} className="spinning" />
+                          ) : (
+                            <Download size={13} />
+                          )}
+                          <span>{downloadingDoc === doc.name ? 'Downloading...' : 'Download'}</span>
                         </button>
+
+                        {confirmDeleteDoc === doc.name ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <button
+                              className="case-doc-btn danger"
+                              onClick={() => handleDelete(doc.name)}
+                              style={{ background: '#dc2626', color: '#fff', borderColor: '#dc2626', fontWeight: 700 }}
+                              disabled={deletingDoc === doc.name}
+                            >
+                              {deletingDoc === doc.name ? 'Purging...' : 'Confirm'}
+                            </button>
+                            <button
+                              className="case-doc-btn"
+                              onClick={() => setConfirmDeleteDoc(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            className="case-doc-btn danger"
+                            onClick={() => setConfirmDeleteDoc(doc.name)}
+                            title="Purge document from vector store"
+                            disabled={deletingDoc === doc.name}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -405,11 +665,11 @@ export default function CaseDocumentsModal({
         {/* Footer */}
         <div className="case-docs-footer">
           <div>
-            <b>Sandbox Path:</b> <code>/sandboxes/{activeCase?.id || 'default'}/</code>
+            <b>Matter Vault:</b> <code>/vault/{activeCase?.matter_id || activeCase?.id || 'default'}</code>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Lock size={12} color="#2F6B45" />
-            <span>OpenShell Zero-Cross-Tenant eBPF Isolation Active</span>
+            <span>Strict Attorney-Client Privilege Protection Active</span>
           </div>
         </div>
       </div>
@@ -476,18 +736,15 @@ export default function CaseDocumentsModal({
                   </button>
                 )}
 
-                <a 
-                  href={`http://localhost:8000/api/intelligence/cases/${activeCase.id}/documents/${encodeURIComponent(readingDoc.name)}/download`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button 
                   className="case-doc-btn primary-download"
+                  onClick={() => handleDownload(readingDoc)}
                   title="Download verified binary PDF (ReportLab generated)"
-                  download={readingDoc.name}
-                  style={{ textDecoration: 'none' }}
+                  disabled={downloadingDoc === readingDoc.name}
                 >
                   <Download size={13} />
-                  <span>Download PDF</span>
-                </a>
+                  <span>{downloadingDoc === readingDoc.name ? 'Downloading...' : 'Download PDF'}</span>
+                </button>
 
                 <div className="doc-reader-header-divider"></div>
 

@@ -91,7 +91,8 @@ body { font-family: 'Outfit', sans-serif; background-color: var(--bg-app); color
   }
 }
 
-.spinner {
+.spinner,
+.spinning {
   animation: spin 0.85s linear infinite !important;
   display: inline-block;
   transform-origin: center center;

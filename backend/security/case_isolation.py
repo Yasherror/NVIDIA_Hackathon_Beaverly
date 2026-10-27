@@ -1,4 +1,4 @@
-﻿"""
+"""
 Beaverly - Case Isolation Layer
 Simulates OpenShell eBPF kernel-level enforcement.
 In production: OpenShell enforces at OS level.

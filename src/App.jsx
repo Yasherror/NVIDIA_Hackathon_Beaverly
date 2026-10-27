@@ -22,7 +22,7 @@ function App() {
     <div className="app-layout">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="main-content">
-        {activeTab === 'overview' && <Overview setActiveTab={setActiveTab} />}
+        {activeTab === 'overview' && <Overview setActiveTab={setActiveTab} onOpenCase={handleOpenCase} />}
         {activeTab === 'chat' && <Chat selectedCase={selectedCase} setSelectedCase={setSelectedCase} />}
         {activeTab === 'skills' && <Skills />}
         {activeTab === 'cases' && <Cases setActiveTab={setActiveTab} onOpenCase={handleOpenCase} />}

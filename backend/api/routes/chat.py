@@ -8,7 +8,8 @@ import aiosqlite
 import re
 import time
 
-from models.nebius_client import chat_completion
+from models.nebius_client import chat_completion, get_embedding
+from memory.lancedb_store import search_chunks
 from agent.hermes_agent import process_correction
 from security.case_isolation import check_access, log_access
 from config import settings
@@ -93,6 +94,13 @@ async def send_message(req: ChatRequest):
     case_name = "Legal Matter"
     case_found = not bool(req.case_id)
     case_data = None
+    last_user_msg = ""
+    for m in reversed(req.messages):
+        if m.role == "user":
+            last_user_msg = m.content.strip()
+            break
+
+    lower_query = last_user_msg.lower()
 
     if req.case_id:
         try:
@@ -113,44 +121,83 @@ async def send_message(req: ChatRequest):
                             f"- Practice Area: {case_data['practice_area'] or 'General Practice'}\n"
                             f"- Case Status: {case_data['status']}\n"
                         )
+                        # Perform LanceDB RAG retrieval against case documents if query is present
+                        if last_user_msg:
+                            try:
+                                q_vec = await get_embedding(last_user_msg)
+                                rag_chunks = search_chunks(req.case_id, q_vec, top_k=4)
+                                if rag_chunks:
+                                    case_context += "\n[Relevant Matter Documents & Evidentiary Clauses (Retrieved via LanceDB RAG)]\n"
+                                    for rc in rag_chunks:
+                                        case_context += f"- [{rc.get('doc_name')}, Page {rc.get('page', 1)}]: \"{rc.get('chunk', '').strip()}\"\n"
+                            except Exception as rag_err:
+                                logger.warning(f"RAG retrieval skipped for case {req.case_id}: {rag_err}")
         except Exception as err:
             logger.warning(f"Could not load case context for {req.case_id}: {err}")
 
     if not case_found:
-        raise HTTPException(404, "Active case not found; chat scope cannot be established")
+        case_name = "General Legal Advisory"
+        case_context = (
+            "\n\n[General Legal Consultation Scope — No Matter Bound]\n"
+            "- Mode: General Legal Research & Advisory\n"
+            "- Note: Client matter isolation and fact-check verification are active only when a specific matter is selected."
+        )
 
-    last_user_msg = ""
-    for m in reversed(req.messages):
-        if m.role == "user":
-            last_user_msg = m.content.strip()
-            break
+    # --- OpenShell Kernel Enforcement: Universal Cross-Case File Access Check ---
+    target_case = None
+    target_resource = None
 
-    lower_query = last_user_msg.lower()
+    # 1. Detect direct sandbox/openshell path access: /sandboxes/<candidate_case>/...
+    sandbox_match = re.search(r"/(?:sandboxes|openshell)/([a-zA-Z0-9_-]+)(/[^\s'\"]+)?", last_user_msg)
+    if sandbox_match:
+        candidate_case = sandbox_match.group(1)
+        if candidate_case != req.case_id and candidate_case != "chat_session":
+            target_case = candidate_case
+            subpath = sandbox_match.group(2) or "/confidential_case_notes.txt"
+            target_resource = f"/sandboxes/{target_case}{subpath}"
 
-    # --- OpenShell Kernel Enforcement: Cross-Case File Access Check ---
-    cross_case_patterns = [
-        r"matter-89a", r"matter-104b", r"sandboxes/matter",
-        r"read case a", r"read case b", r"read other case",
-        r"confidential_settlement_notes", r"witness_deposition_sealed"
-    ]
-    is_cross_case_attempt = any(re.search(pat, lower_query) for pat in cross_case_patterns)
+    # 2. Check if user mentions another case by ID, Matter Number, or Name to request files
+    if not target_case:
+        async with aiosqlite.connect(settings.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT id, matter_id, short_name, client_name FROM cases WHERE id != ?", (req.case_id or "",)) as cur:
+                all_other_cases = await cur.fetchall()
 
-    # If the user is in case-b and attempts to touch case-a files
-    if is_cross_case_attempt and req.case_id != "case-a":
-        target_case = "case-a"
-        target_resource = "/sandboxes/matter-89a/confidential_settlement_notes.txt"
+        # Check for specific mention of other case
+        for oc in all_other_cases:
+            c_id = (oc['id'] or "").lower()
+            m_id = (oc['matter_id'] or "").lower()
+            s_name = (oc['short_name'] or "").lower()
+            if (c_id and c_id in lower_query) or (m_id and m_id in lower_query) or (len(s_name) > 3 and s_name in lower_query):
+                target_case = oc['id']
+                target_resource = f"/sandboxes/{target_case}/confidential_case_records.pdf"
+                break
+
+        # Check for general cross-case access intent
+        if not target_case:
+            cross_case_patterns = [
+                r"read other case", r"read another case", r"read other matter",
+                r"access other case", r"access another case", r"cross-tenant",
+                r"read files from other", r"read other sandbox",
+                r"confidential_settlement_notes", r"witness_deposition_sealed"
+            ]
+            if any(re.search(pat, lower_query) for pat in cross_case_patterns):
+                target_case = all_other_cases[0]['id'] if all_other_cases else "external-tenant-vault"
+                target_resource = f"/sandboxes/{target_case}/confidential_settlement_notes.txt"
+
+    if target_case and target_case != req.case_id:
         await log_access(
             req.case_id,
             "DENY",
             target_resource,
-            f"OpenShell eBPF security_file_open blocked cross-case violation from [/openshell/{req.case_id}] to [/sandboxes/matter-89a/]"
+            f"OpenShell eBPF security_file_open blocked cross-case violation from [/openshell/{req.case_id}] to [{target_resource}]"
         )
         return {
             "role": "assistant",
             "content": (
                 "❌ **ACCESS DENIED — OPENSHELL KERNEL ENFORCEMENT**\n\n"
                 f"**Sandbox Violation Blocked:** The agent attempted to access files outside active sandbox `[{req.case_id}]`.\n\n"
-                "- **Requested Resource:** `/sandboxes/matter-89a/confidential_settlement_notes.txt`\n"
+                f"- **Requested Resource:** `{target_resource}`\n"
                 "- **Kernel Enforcement:** Linux LSM / eBPF `security_file_open()` cgroup isolation\n"
                 "- **Policy Verdict:** `DENY (EPERM: Cross-tenant unauthorized)`\n"
                 "- **Audit Trail:** Event permanently logged in local **Protection Record**.\n\n"
@@ -162,20 +209,34 @@ async def send_message(req: ChatRequest):
 
     active_skills = await load_active_skills(req.case_id)
 
-    # --- PRD Step 3 Demo Storyline Check: "Who is Party A?" in Case B ---
-    if ("who is party a" in lower_query or "what is party a" in lower_query):
-        has_party_a_skill = any("party a" in (s.get("trigger_pattern") or "").lower() for s in active_skills)
-        if not has_party_a_skill and req.case_id != "case-a":
-            return {
-                "role": "assistant",
-                "content": (
-                    "**This case doesn't have that information.**\n\n"
-                    "In Beaverly, case memories and entity designations are strictly bound to their respective matter container. "
-                    "The designation for 'Party A' was recorded exclusively within **Case A (Apex v. ABC Holdings)** and cannot cross boundaries into this matter."
-                ),
-                "model": settings.model_nano,
-                "applied_skills": []
-            }
+    # --- Universal Case Memory Scope Check: Inquiring about entities/habits of other matters ---
+    entity_match = re.search(r"(?:who|what)\s+(?:is|was)\s+['\"]?([a-zA-Z0-9_\s]{2,40})['\"]?", lower_query)
+    if entity_match:
+        queried_entity = entity_match.group(1).strip().rstrip("?").strip()
+        has_entity_in_case = any(queried_entity in (s.get("trigger_pattern") or "").lower() for s in active_skills)
+        if not has_entity_in_case and len(queried_entity) >= 3:
+            async with aiosqlite.connect(settings.db_path) as db:
+                db.row_factory = aiosqlite.Row
+                async with db.execute("""
+                    SELECT s.*, c.short_name, c.client_name 
+                    FROM skills s 
+                    LEFT JOIN cases c ON s.case_id = c.id 
+                    WHERE lower(s.trigger_pattern) = ? AND s.scope='case-specific' AND (s.case_id != ? OR ? IS NULL)
+                    LIMIT 1
+                """, (queried_entity, req.case_id or "", req.case_id or "")) as cur:
+                    other_binding = await cur.fetchone()
+            if other_binding:
+                owner_name = other_binding['short_name'] or other_binding['client_name'] or other_binding['case_id']
+                return {
+                    "role": "assistant",
+                    "content": (
+                        "**This case doesn't have that information.**\n\n"
+                        "In Beaverly, case memories and entity designations are strictly bound to their respective matter container.\n\n"
+                        f"The designation for **'{queried_entity.title()}'** was recorded exclusively within **{owner_name}** and cannot cross boundaries into this matter."
+                    ),
+                    "model": settings.model_nano,
+                    "applied_skills": []
+                }
 
     # Format active confirmed skills for prompt
     skill_context = ""
@@ -228,8 +289,14 @@ async def send_message(req: ChatRequest):
                 if corr_res.get("should_create_skill") and corr_res.get("proposed_skill"):
                     p_skill = corr_res["proposed_skill"]
                     if p_skill.get("trigger_pattern") and p_skill.get("replacement"):
+                        occurrences = await record_correction(
+                            req.case_id, "", last_user_msg,
+                            p_skill["trigger_pattern"], p_skill["replacement"],
+                        )
+                        p_skill["occurrences"] = occurrences
+                        corr_res["occurrences"] = occurrences
                         suggested_skill = p_skill
-                        skill_question = corr_res.get("scope_question") or "Should I always remember this habit across all cases?"
+                        skill_question = corr_res.get("scope_question") or f"I noticed this preference ({occurrences}x). Should I always remember this habit?"
             except Exception as e_corr:
                 logger.debug(f"Correction intent detection skipped: {e_corr}")
 

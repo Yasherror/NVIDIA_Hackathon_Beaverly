@@ -42,22 +42,10 @@ SEED_DOCS = {
         ('Executive_Severance_and_Change_in_Control_Plan.pdf', 'pdf', '1.8 MB', 12, 48, 'Tier-1 executive severance policy and change-of-control golden parachute acceleration provisions.'),
         ('Stock_Option_Grant_and_Vesting_Schedule.pdf', 'pdf', '0.8 MB', 4, 16, 'Incentive stock option award agreement with standard 4-year graded vesting schedule.')
     ],
-    'case-chen-001': [
-        ('Executive_Employment_Agreement_David_Chen.docx', 'docx', '1.1 MB', 6, 24, 'Executive employment agreement of David Chen with MegaTech Asia Corp.'),
-        ('Non_Compete_and_Restrictive_Covenants.pdf', 'pdf', '0.8 MB', 4, 16, '24-month post-employment restrictive covenant and non-solicitation scope.'),
-        ('Severance_and_Notice_Period_Addendum.pdf', 'pdf', '0.5 MB', 3, 12, 'Notice period compliance terms and severance payment computation schedule.'),
-        ('MegaTech_Dispute_Correspondence.pdf', 'pdf', '0.7 MB', 5, 20, 'Formal letters of demand and dispute correspondence regarding unpaid severance.'),
-        ('Arbitration_Notice_SIAC.pdf', 'pdf', '0.4 MB', 3, 10, 'Notice of Arbitration filed with Singapore International Arbitration Centre.')
-    ],
     'case-ee9379bf': [
         ('Employment_Agreement_Master.pdf', 'pdf', '1.3 MB', 7, 28, 'Master employment agreement governing duties, equity awards, and severance obligations.'),
         ('Compensation_and_Equity_Incentive.docx', 'docx', '0.7 MB', 4, 16, 'Performance bonus formula, incentive milestones, and stock options.'),
         ('Separation_Release_Draft.pdf', 'pdf', '0.5 MB', 3, 12, 'Mutual release and confidential separation terms.')
-    ],
-    'case-abc-mock': [
-        ('Master_Restructuring_Agreement.pdf', 'pdf', '2.1 MB', 14, 52, 'Archived corporate reorganization and commercial merger contract.'),
-        ('Creditor_Consent_and_Waivers.pdf', 'pdf', '1.2 MB', 8, 30, 'Secured creditor waivers and consent to corporate restructuring.'),
-        ('Asset_Purchase_Schedule.xlsx', 'xlsx', '0.8 MB', 4, 15, 'Schedule of transferred assets, liabilities, and assumed contracts.')
     ]
 }
 

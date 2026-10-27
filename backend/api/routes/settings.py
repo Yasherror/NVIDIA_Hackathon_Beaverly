@@ -1,4 +1,4 @@
-﻿"""API routes: App settings"""
+"""API routes: App settings"""
 from fastapi import APIRouter
 from pydantic import BaseModel
 import aiosqlite

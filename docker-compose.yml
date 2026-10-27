@@ -1,0 +1,23 @@
+services:
+  beaverly:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: beaverly-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - NEBIUS_API_KEY=${NEBIUS_API_KEY:-}
+      - NEBIUS_BASE_URL=${NEBIUS_BASE_URL:-https://api.tokenfactory.nebius.com/v1/}
+      - APP_ENV=production
+      - APP_PORT=8000
+    volumes:
+      - beaverly_db:/app/backend/db
+      - beaverly_uploads:/app/backend/uploads
+      - beaverly_sandboxes:/app/backend/sandboxes
+
+volumes:
+  beaverly_db:
+  beaverly_uploads:
+  beaverly_sandboxes:

@@ -4,6 +4,7 @@ import {
   Info, ExternalLink, Check, Copy, RefreshCw, Download, AlertCircle
 } from 'lucide-react';
 import './Settings.css';
+import { API_BASE_URL } from '../api/apiClient';
 
 export default function Settings({ setActiveTab }) {
   const [apiKey, setApiKey] = useState('sk_live_nebius_token_09871234');
@@ -35,6 +36,54 @@ export default function Settings({ setActiveTab }) {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  // Sync settings with backend app_settings table
+  React.useEffect(() => {
+    fetch(`${API_BASE_URL}/settings/`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.read_isolation !== undefined) setReadIso(data.read_isolation === 'true');
+        if (data.network_isolation !== undefined) setNetworkIso(data.network_isolation === 'true');
+        if (data.pii_redaction !== undefined) setPiiRedact(data.pii_redaction === 'true');
+        if (data.model_routing) {
+          try { setRouting(JSON.parse(data.model_routing)); } catch (e) {}
+        }
+      })
+      .catch(e => console.warn('Could not load app settings:', e));
+  }, []);
+
+  const saveSetting = async (key, val) => {
+    try {
+      await fetch(`${API_BASE_URL}/settings/`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value: String(val) })
+      });
+    } catch (e) {
+      console.warn('Failed to save setting:', e);
+    }
+  };
+
+  const handleToggleReadIso = () => {
+    const next = !readIso;
+    setReadIso(next);
+    saveSetting('read_isolation', next);
+    showToast(`Strict Case Isolation: ${next ? 'Enforced' : 'Disabled'}`);
+  };
+
+  const handleToggleNetworkIso = () => {
+    const next = !networkIso;
+    setNetworkIso(next);
+    saveSetting('network_isolation', next);
+    showToast(`Network Egress Block: ${next ? 'Enforced' : 'Disabled'}`);
+  };
+
+  const handleTogglePiiRedact = () => {
+    const next = !piiRedact;
+    setPiiRedact(next);
+    saveSetting('pii_redaction', next);
+    showToast(`Client PII Anonymization: ${next ? 'Enforced' : 'Disabled'}`);
+  };
+
   const scrollToSection = (id) => {
     const el = document.getElementById(id);
     if (el) {
@@ -45,7 +94,7 @@ export default function Settings({ setActiveTab }) {
   const handleTestConnection = async () => {
     setTestStatus('testing');
     try {
-      const res = await fetch('http://localhost:8000/api/settings/status');
+      const res = await fetch(`${API_BASE_URL}/settings/status`);
       if (res.ok) {
         setTimeout(() => {
           setTestStatus('success');
@@ -91,8 +140,21 @@ rules:
     }, 900);
   };
 
-  const handleExportSkills = () => {
-    showToast('Successfully exported 12 learned skills to /data/exports/skills.json');
+  const handleExportSkills = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/skills/`);
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `beaverly-skills-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(`Exported ${data.length} skills to backup JSON`);
+    } catch (e) {
+      showToast('Export failed: ' + e.message);
+    }
   };
 
   const handleClearCache = () => {
@@ -385,7 +447,7 @@ rules:
               </div>
               <div 
                 className={`custom-switch ${readIso ? 'on' : ''}`}
-                onClick={() => setReadIso(!readIso)}
+                onClick={handleToggleReadIso}
               ></div>
             </div>
 
@@ -396,7 +458,7 @@ rules:
               </div>
               <div 
                 className={`custom-switch ${networkIso ? 'on' : ''}`}
-                onClick={() => setNetworkIso(!networkIso)}
+                onClick={handleToggleNetworkIso}
               ></div>
             </div>
 
@@ -407,7 +469,7 @@ rules:
               </div>
               <div 
                 className={`custom-switch ${piiRedact ? 'on' : ''}`}
-                onClick={() => setPiiRedact(!piiRedact)}
+                onClick={handleTogglePiiRedact}
               ></div>
             </div>
 
@@ -492,7 +554,7 @@ rules:
             </button>
             <button 
               className="btn-card-action" 
-              onClick={() => window.open('http://localhost:8000/api/logs/export', '_blank')}
+              onClick={() => window.open(`${API_BASE_URL}/logs/export`, '_blank')}
             >
               <Download size={15} /> Export Audit Log (PDF/JSON)
             </button>

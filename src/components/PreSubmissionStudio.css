@@ -143,6 +143,78 @@
   transform: scale(1.08);
 }
 
+/* Ground Truth Evidence Source Bar */
+.studio-source-bar {
+  padding: 10px 24px;
+  background: linear-gradient(90deg, #fbf7f2 0%, #fff 100%);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.studio-source-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.studio-source-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.studio-doc-select {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: #fff;
+  border: 1.5px solid var(--border-dark);
+  border-radius: var(--radius-sm);
+  outline: none;
+  cursor: pointer;
+  max-width: 440px;
+  transition: all 0.2s ease;
+}
+
+.studio-doc-select:hover {
+  border-color: var(--brand-primary);
+}
+
+.studio-doc-select:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(115, 62, 30, 0.12);
+}
+
+.studio-source-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.studio-source-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: #f4efe9;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+}
+
 /* Preset Drafts Bar */
 .studio-preset-bar {
   padding: 10px 24px;

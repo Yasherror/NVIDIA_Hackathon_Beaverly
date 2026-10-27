@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Shield, Check, ShieldAlert, Download, RefreshCw } from 'lucide-react';
-import { apiClient } from '../api/apiClient';
+import { apiClient, API_BASE_URL } from '../api/apiClient';
 import './Logs.css';
 
 export default function Logs() {
@@ -27,7 +27,7 @@ export default function Logs() {
   }, []);
 
   const handleExport = () => {
-    window.open('http://localhost:8000/api/logs/export', '_blank');
+    window.open(`${API_BASE_URL}/logs/export`, '_blank');
   };
 
   const formatTime = (ts) => {

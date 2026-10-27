@@ -51,6 +51,7 @@ If no factual contradictions exist, return:
 class VerifyRequest(BaseModel):
     case_id: str
     draft_text: str
+    doc_filter: Optional[str] = None
 
 class MismatchItem(BaseModel):
     id: str
@@ -75,7 +76,6 @@ SAMPLE_DRAFTS = [
     {
         "id": "sample-termination",
         "title": "Termination Notice — Sarah Jenkins (Date & Severance Discrepancies)",
-        "case_id": "matter-89a",
         "draft_text": (
             "NOTICE OF EMPLOYMENT TERMINATION\n\n"
             "Date: 25 February 2025\n"
@@ -94,7 +94,6 @@ SAMPLE_DRAFTS = [
     {
         "id": "sample-settlement",
         "title": "Mutual Release Clause (Corporate Entity & Jurisdiction Errors)",
-        "case_id": "matter-89a",
         "draft_text": (
             "MUTUAL RELEASE OF CLAIMS CLAUSE\n\n"
             "1. In consideration of the covenants herein, Plaintiff hereby releases Apex Global Inc and its "
@@ -106,8 +105,7 @@ SAMPLE_DRAFTS = [
     },
     {
         "id": "sample-synergy",
-        "title": "Ed Holloway Executive Notice (Real Contract: Salary & Term Discrepancies)",
-        "case_id": "case-8b0bb87e",
+        "title": "Ed Holloway Executive Notice (Salary & Term Discrepancies)",
         "draft_text": (
             "NOTICE OF EXECUTIVE REMUNERATION AND TERM CONFIRMATION\n\n"
             "To: Ed Holloway, Employee\n"
@@ -140,7 +138,7 @@ async def verify_draft(req: VerifyRequest):
     chunks = []
     try:
         query_vector = await get_embedding(draft[:1000])
-        chunks = search_chunks(req.case_id, query_vector, top_k=5)
+        chunks = search_chunks(req.case_id, query_vector, top_k=5, doc_filter=req.doc_filter)
     except Exception as e:
         logger.warning(f"Vector search exception in verify: {e}")
         chunks = []
@@ -181,7 +179,7 @@ async def verify_draft(req: VerifyRequest):
                     "job_id": job_id,
                     "latency_ms": latency,
                     "mismatches": normalized,
-                    "note": f"Audited against {len(chunks)} chunks retrieved from LanceDB private matter sandbox."
+                    "note": f"Cross-examined against {f'executed document: {req.doc_filter}' if req.doc_filter and req.doc_filter != 'all' else f'{len(chunks)} relevant clauses retrieved from matter vault'}."
                 }
         except Exception as e:
             logger.error(f"Dynamic verification failed: {e}")
@@ -268,7 +266,7 @@ async def _log_audit_action(case_id: str, reason: str, action: str = "ALLOW"):
             await db.execute(
                 """INSERT INTO protection_logs (case_id, action, resource, reason, agent)
                    VALUES (?, ?, ?, ?, ?)""",
-                (case_id or "case-a", action, "/verification/pre-submission-check", reason, "Pre-Submission Verifier")
+                (case_id or "general", action, "/verification/pre-submission-check", reason, "Pre-Submission Verifier")
             )
             await db.commit()
     except Exception as e:

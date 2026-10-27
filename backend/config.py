@@ -2,6 +2,7 @@
 Beaverly - App Configuration (loads from the backend-local .env)
 """
 import os
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -23,11 +24,18 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
 
     # Storage
-    db_path: str = "./db/beaverly.db"
-    lancedb_path: str = "./db/lancedb"
-    uploads_path: str = "./uploads"
-    sandboxes_path: str = "./sandboxes"
+    db_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "db", "beaverly.db")
+    lancedb_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "db", "lancedb")
+    uploads_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+    sandboxes_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sandboxes")
 
+    @field_validator("db_path", "lancedb_path", "uploads_path", "sandboxes_path", mode="after")
+    @classmethod
+    def resolve_relative_paths(cls, v: str) -> str:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        if v and not os.path.isabs(v):
+            return os.path.abspath(os.path.join(base_dir, v))
+        return v
 
     # Security
     secret_key: str = "dev-secret-change-in-production"

@@ -1,4 +1,4 @@
-﻿.sidebar-container { height: 100vh; background-color: var(--bg-app); border-right: 1px solid var(--border-light); display: flex; flex-direction: column; transition: width var(--transition-smooth), box-shadow var(--transition-smooth); position: fixed; left: 0; top: 0; z-index: 100; overflow: hidden; }
+.sidebar-container { height: 100vh; background-color: var(--bg-app); border-right: 1px solid var(--border-light); display: flex; flex-direction: column; transition: width var(--transition-smooth), box-shadow var(--transition-smooth); position: fixed; left: 0; top: 0; z-index: 100; overflow: hidden; }
 .sidebar-container.collapsed { width: 80px; }
 .sidebar-container.expanded { width: 280px; box-shadow: var(--shadow-md); }
 .sidebar-logo { padding: 24px; display: flex; align-items: center; gap: 16px; min-width: 280px; margin-bottom: 20px; }

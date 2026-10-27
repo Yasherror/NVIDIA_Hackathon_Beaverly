@@ -1,7 +1,7 @@
 """API routes: Case management"""
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import aiosqlite, uuid
+import aiosqlite, uuid, os
 from datetime import datetime
 from config import settings
 
@@ -16,11 +16,18 @@ class CaseCreate(BaseModel):
     lead_counsel: str = ""
     description: str = ""
 
+from memory.lancedb_store import purge_case_table
+
 @router.get("/")
 async def list_cases():
     async with aiosqlite.connect(settings.db_path) as db:
         db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT * FROM cases ORDER BY created_at DESC") as cur:
+        async with db.execute("""
+            SELECT c.*, 
+                (SELECT COUNT(*) FROM skills s WHERE s.case_id = c.id AND s.scope='case-specific') as memories_count
+            FROM cases c 
+            ORDER BY c.created_at DESC
+        """) as cur:
             rows = await cur.fetchall()
     return [dict(r) for r in rows]
 
@@ -28,6 +35,11 @@ async def list_cases():
 async def create_case(data: CaseCreate):
     case_id = f"case-{uuid.uuid4().hex[:8]}"
     matter_id = f"MATTER-{datetime.utcnow().year}-{uuid.uuid4().hex[:6].upper()}"
+    
+    # Ensure physical OpenShell sandbox directory exists
+    sandbox_dir = os.path.join(settings.sandboxes_path, case_id)
+    os.makedirs(sandbox_dir, exist_ok=True)
+
     async with aiosqlite.connect(settings.db_path) as db:
         await db.execute(
             """INSERT INTO cases (id, matter_id, client_name, opponent, short_name,
@@ -43,33 +55,76 @@ async def create_case(data: CaseCreate):
 async def get_case(case_id: str):
     async with aiosqlite.connect(settings.db_path) as db:
         db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT * FROM cases WHERE id=?", (case_id,)) as cur:
+        async with db.execute("""
+            SELECT c.*, 
+                (SELECT COUNT(*) FROM skills s WHERE s.case_id = c.id AND s.scope='case-specific') as memories_count
+            FROM cases c WHERE c.id=?
+        """, (case_id,)) as cur:
             row = await cur.fetchone()
     if not row:
         raise HTTPException(404, "Case not found")
     return dict(row)
 
+@router.get("/{case_id}/purge-summary")
+async def get_purge_summary(case_id: str):
+    """Retrieve exact counts of case memories, skills, and documents before closing."""
+    async with aiosqlite.connect(settings.db_path) as db:
+        async with db.execute("SELECT COUNT(*) FROM skills WHERE case_id=? AND scope='case-specific'", (case_id,)) as cur:
+            skills_count = (await cur.fetchone())[0]
+        async with db.execute("SELECT COUNT(*) FROM case_documents WHERE case_id=?", (case_id,)) as cur:
+            docs_count = (await cur.fetchone())[0]
+    return {
+        "case_id": case_id,
+        "case_memories_count": skills_count,
+        "case_skills_count": skills_count,
+        "case_documents_count": docs_count
+    }
+
 @router.patch("/{case_id}/close")
 async def close_case(case_id: str):
     now_iso = datetime.utcnow().isoformat()
     async with aiosqlite.connect(settings.db_path) as db:
+        async with db.execute("SELECT COUNT(*) FROM skills WHERE case_id=? AND scope='case-specific'", (case_id,)) as cur:
+            skills_count = (await cur.fetchone())[0]
+        async with db.execute("SELECT COUNT(*) FROM case_documents WHERE case_id=?", (case_id,)) as cur:
+            docs_count = (await cur.fetchone())[0]
+
         await db.execute(
             "UPDATE cases SET status='closed', closed_at=? WHERE id=?",
             (now_iso, case_id)
+        )
+        # Purge version history for case-specific skills FIRST before deleting skills
+        await db.execute(
+            "DELETE FROM skill_versions WHERE skill_id IN (SELECT id FROM skills WHERE case_id=?)",
+            (case_id,)
         )
         # Purge case-specific skills upon case closure
         await db.execute(
             "DELETE FROM skills WHERE case_id=? AND scope='case-specific'",
             (case_id,)
         )
+        # Purge case documents from catalog
+        await db.execute(
+            "DELETE FROM case_documents WHERE case_id=?",
+            (case_id,)
+        )
+        # Drop LanceDB table for physical vector destruction
+        purge_case_table(case_id)
+
+        # Remove physical files in sandbox directory to prevent orphaned files
+        case_sandbox_dir = os.path.join(settings.sandboxes_path, case_id)
+        if os.path.exists(case_sandbox_dir):
+            import shutil
+            shutil.rmtree(case_sandbox_dir, ignore_errors=True)
+
         # Record audit log
         await db.execute(
             """INSERT INTO protection_logs (case_id, action, resource, reason, agent)
-               VALUES (?, 'ALLOW', ?, 'Case closed: Purged case memories & skills', 'OpenShell Engine')""",
-            (case_id, f"case/{case_id}")
+               VALUES (?, 'ALLOW', ?, ?, 'OpenShell Kernel Isolation Engine')""",
+            (case_id, f"case/{case_id}", f"Case closed: Zero-leak memory destruction ({skills_count} case memories, {docs_count} sandboxed files purged from LanceDB)")
         )
         await db.commit()
-    return {"status": "closed", "closed_at": now_iso}
+    return {"status": "closed", "closed_at": now_iso, "purged_skills": skills_count, "purged_docs": docs_count}
 
 class CaseUpdate(BaseModel):
     client_name: str | None = None

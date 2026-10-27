@@ -35,20 +35,32 @@ def get_db():
     return _db
 
 
-def _get_tables():
+def _get_tables() -> list[str]:
     db = get_db()
     try:
-        return db.list_tables()
+        res = db.list_tables()
+        if hasattr(res, "tables"):
+            return list(res.tables)
+        if isinstance(res, (list, set, tuple)):
+            return list(res)
     except Exception:
-        return db.table_names()
+        pass
+    try:
+        return list(db.table_names())
+    except Exception:
+        return []
 
 
 def get_case_table(case_id: str):
     """Get or create a per-case LanceDB table."""
     db = get_db()
     table_name = f"case_{case_id.replace('-', '_')}"
-    if table_name not in _get_tables():
-        return db.create_table(table_name, schema=SCHEMA)
+    existing = _get_tables()
+    if table_name not in existing:
+        try:
+            return db.create_table(table_name, schema=SCHEMA)
+        except Exception:
+            return db.open_table(table_name)
     return db.open_table(table_name)
 
 
@@ -63,10 +75,14 @@ def add_chunks(case_id: str, chunks: list[dict]):
     logger.info(f"Added {len(rows)} chunks to case {case_id}")
 
 
-def search_chunks(case_id: str, query_vector: list[float], top_k: int = 5) -> list[dict]:
-    """Retrieve top-k most relevant chunks for a query vector."""
+def search_chunks(case_id: str, query_vector: list[float], top_k: int = 5, doc_filter: str = None) -> list[dict]:
+    """Retrieve top-k most relevant chunks for a query vector, optionally filtered by document name."""
     table = get_case_table(case_id)
-    results = table.search(query_vector).limit(top_k).to_list()
+    search = table.search(query_vector)
+    if doc_filter and doc_filter != "all":
+        safe_filter = doc_filter.replace("'", "''")
+        search = search.where(f"doc_name = '{safe_filter}'")
+    results = search.limit(top_k).to_list()
     return results
 
 
@@ -127,4 +143,20 @@ def delete_case_document(case_id: str, doc_name: str) -> bool:
     except Exception as e:
         logger.error(f"Failed to delete {doc_name} from {table_name}: {e}")
         return False
+
+
+def purge_case_table(case_id: str) -> bool:
+    """Purge all vector embeddings and drop LanceDB table upon case closure (PRD Zero-Leak mandate)."""
+    db = get_db()
+    table_name = f"case_{case_id.replace('-', '_')}"
+    if table_name in _get_tables():
+        try:
+            db.drop_table(table_name)
+            logger.info(f"LanceDB dropped table {table_name} on case closure")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to drop table {table_name}: {e}")
+            return False
+    return False
+
 
