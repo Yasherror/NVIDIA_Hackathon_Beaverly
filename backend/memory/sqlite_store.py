@@ -125,6 +125,31 @@ async def init_db():
             )
         """)
 
+        # Seed Golden CUAD Benchmark cases if empty
+        async with db.execute("SELECT COUNT(*) FROM cases") as cur:
+            cases_count = (await cur.fetchone())[0]
+            if cases_count == 0:
+                await db.execute("""
+                    INSERT OR REPLACE INTO cases (id, matter_id, client_name, opponent, short_name, jurisdiction, practice_area, lead_counsel, files_count, description, status, created_at, closed_at)
+                    VALUES
+                    ('case-6598b8c0', 'MATTER-2026-2CA3BD', 'Accuray Incorporated', 'Siemens Aktiengesellschaft', 'Accuray v. Siemens - CyberKnife Distributor Agreement', 'California, USA / Germany', 'Medical Technology & Distribution', 'Elena Vance, Esq.', 1, 'Global Multiple LINAC and CyberKnife robotic radiosurgery distributor agreement (CUAD Benchmark).', 'active', '2026-10-28 13:02:58', NULL),
+                    ('case-f1c8b3f2', 'MATTER-2026-5AA880', 'Bellicum Pharmaceuticals, Inc.', 'Miltenyi Biotec GmbH', 'Bellicum Pharma - Master Cell Therapy Supply Agreement', 'Texas, USA / Bergisch Gladbach, Germany', 'Biotechnology & Clinical Supply', 'Marcus Sterling, Senior Partner', 1, 'Master commercial clinical supply agreement for cell separation and viral vectors (CUAD Benchmark).', 'active', '2026-10-28 13:02:58', NULL),
+                    ('case-95bb4f0b', 'MATTER-2026-1298ED', 'BorrowMoney.com, Inc.', 'JVLS, LLC dba Vaccines 2Go', 'BorrowMoney.com - BM&V2GO Joint Venture', 'Florida, USA', 'FinTech & Corporate Structuring', 'Sarah Jenkins, Esq.', 1, 'Joint venture agreement establishing BM&V2GO commercial partnership under Florida law (CUAD Benchmark).', 'active', '2026-10-28 13:02:58', NULL),
+                    ('case-930d9c2b', 'MATTER-2026-0B2736', 'Acme Law Corp', 'Beta Industries', 'Acme v. Beta Dispute', 'Delaware Chancery Court', 'Commercial Litigation', 'Arthur Pendelton, Lead Counsel', 0, 'Closed matter demonstrating OpenShell zero-leak data destruction and digital certificate.', 'closed', '2026-10-27 14:40:01', '2026-10-27T14:40:11.267416')
+                """)
+                await db.execute("""
+                    INSERT OR REPLACE INTO case_documents (id, case_id, name, file_type, size_human, pages_count, chunks_count, sandbox_path, privilege, status, sample_snippet, created_at)
+                    VALUES
+                    ('doc-case-659', 'case-6598b8c0', 'Accuray_Siemens_Distributor_Agreement.txt', 'txt', '1.2 MB', 7, 28, '/sandboxes/case-6598b8c0/Accuray_Siemens_Distributor_Agreement.txt', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'Exhibit 10.31    PURSUANT TO 17 C.F.R. § 240.24B-2, CONFIDENTIAL INFORMATION HAS BEEN OMITTED AND FILED SEPARATELY WITH THE SEC', '2026-10-28 13:03:02'),
+                    ('doc-case-f1c', 'case-f1c8b3f2', 'Miltenyi_Bellicum_Supply_Agreement.txt', 'txt', '1.2 MB', 7, 28, '/sandboxes/case-f1c8b3f2/Miltenyi_Bellicum_Supply_Agreement.txt', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'Exhibit 10.1 Certain confidential information contained in this document has been omitted because it is not material and competitively harmful', '2026-10-28 13:03:06'),
+                    ('doc-case-95b', 'case-95bb4f0b', 'BorrowMoney_Vaccines2Go_JV_Agreement.txt', 'txt', '1.2 MB', 7, 28, '/sandboxes/case-95bb4f0b/BorrowMoney_Vaccines2Go_JV_Agreement.txt', 'Confidential - Attorney-Client Protected', 'Indexed in LanceDB', 'Exhibit 10.1 JOINT VENTURE AGREEMENT made and entered into this 20th day of Friday, March 2020 BETWEEN: BorrowMoney.com, inc of Florida', '2026-10-28 13:03:10')
+                """)
+                await db.execute("""
+                    INSERT OR REPLACE INTO skills (id, scope, case_id, name, trigger_pattern, replacement, category, learned_from, active, occurrences, confidence, description, created_at)
+                    VALUES
+                    ('skill-05f35695', 'case-specific', 'case-f1c8b3f2', 'Party A -> Miltenyi Biotec Binding', 'Party A', 'Miltenyi Biotec GmbH', 'Named Entity Binding', 'CUAD Benchmark Evidence', 1, 1, 0.99, 'Binds confidential generic designation Party A to Miltenyi Biotec GmbH strictly within case-f1c8b3f2.', '2026-10-28 13:03:40')
+                """)
+
         # Seed default firm-wide drafting habits if empty
         async with db.execute("SELECT COUNT(*) FROM skills WHERE scope='global'") as cur:
             skills_count = (await cur.fetchone())[0]

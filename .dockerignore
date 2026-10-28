@@ -9,8 +9,5 @@ __pycache__
 *.pyd
 .venv
 venv
-backend/db/*.db
-backend/db/lancedb/
 backend/uploads/
-backend/sandboxes/
 .gemini
