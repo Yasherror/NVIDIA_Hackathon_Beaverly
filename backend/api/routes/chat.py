@@ -40,7 +40,7 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    case_id: str
+    case_id: str | None = None
     messages: list[ChatMessage]
     model: str = None
 
@@ -57,7 +57,7 @@ def choose_model(query: str, requested: str | None = None) -> tuple[str, str]:
 
 
 class CorrectionRequest(BaseModel):
-    case_id: str
+    case_id: str | None = None
     original_text: str
     corrected_text: str
     correction_description: str = ""
