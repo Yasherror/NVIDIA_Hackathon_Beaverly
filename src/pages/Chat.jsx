@@ -1005,7 +1005,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
               <div 
                 className="chat-case-pill" 
                 onClick={() => setShowCaseDropdown(!showCaseDropdown)}
-                title={activeCase ? `${activeCase.short_name || activeCase.client_name} • Matter #${activeCase.matter_id || '2026'} (OpenShell Sandboxed)` : 'Select Case'}
+                title={activeCase ? `${activeCase.short_name || activeCase.client_name} • Matter #${activeCase.matter_id || '2026'} (Privilege Protected)` : 'Select Case'}
               >
                 <Folder size={16} />
                 <span className="case-pill-text">{activeCase ? (activeCase.short_name || activeCase.client_name) : 'Select Case'}</span>
@@ -1055,7 +1055,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
             <button 
               className="btn-case-files-header"
               onClick={() => setIsDocumentsModalOpen(true)}
-              title="Open Case Documents Sandbox"
+              title="Open Case Document Vault"
             >
               <FolderOpen size={14} />
               <span>Files ({activeCase?.files_count || 0})</span>
@@ -1225,7 +1225,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
                   </div>
                   <div className="interactive-text" style={{ marginBottom: '14px', lineHeight: 1.6 }}>
                     {activeCase ? (
-                      <>All case documents, memories, and skills are strictly sandboxed for matter <b>{activeCase.matter_id || 'MATTER-2026'}</b>. Client: <b>{activeCase.client_name}</b>{activeCase.opponent ? ` · Opponent: ${activeCase.opponent}` : ''}.</>
+                      <>All case documents, facts, and rules are strictly privilege-protected for matter <b>{activeCase.matter_id || 'MATTER-2026'}</b>. Client: <b>{activeCase.client_name}</b>{activeCase.opponent ? ` · Opponent: ${activeCase.opponent}` : ''}.</>
                     ) : (
                       <>Zero active client matters selected. Select a matter from the left directory, or create a new client matter to upload contracts and begin private legal consultation.</>
                     )}
@@ -1724,7 +1724,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
             <span 
               className="mem-pill clickable-file-pill"
               onClick={() => setIsDocumentsModalOpen(true)}
-              title="Click to inspect and manage sandbox documents"
+              title="Click to inspect and manage case documents"
             >
               <FolderOpen size={12} style={{ marginRight: 4, display: 'inline', verticalAlign: 'text-bottom' }} />
               Files: {activeCase?.files_count || 0} documents
@@ -1923,7 +1923,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
               }}>
                 <ShieldCheck size={16} color="var(--brand-primary)" style={{ flexShrink: 0, marginTop: 2 }} />
                 <div>
-                  <b>OpenShell Sandbox Safety:</b> Messages in this conversation will be permanently purged. Matter documents, global lawyer habits, and protection audit certificates remain untouched.
+                  <b>Matter Privacy Guarantee:</b> Messages in this conversation will be permanently deleted. Executed contracts, lawyer habits, and protection audit certificates remain safe.
                 </div>
               </div>
             </div>

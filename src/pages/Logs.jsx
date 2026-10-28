@@ -71,7 +71,7 @@ export default function Logs() {
           <div className="pdf-icon-placeholder">PDF</div>
           <div className="widget-text">
             <div className="widget-title">Beaverly OpenShell Compliance Certificate</div>
-            <div className="widget-sub">Zero data leakage across active matter sandboxes</div>
+            <div className="widget-sub">Zero data leakage across active client matters</div>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function Logs() {
                     {isAllowed ? `Verified: ${r.resource}` : `Blocked: Ethical Wall Prevented Access to ${r.resource}`}
                   </div>
                   <div className="card-subtext">
-                    Case: <b>{r.case_id}</b> • Agent: {r.agent || 'Hermes Agent'} • Reason: {r.reason || (isAllowed ? 'Authorized same-case access' : 'Cross-tenant sandbox violation')}
+                    Case: <b>{r.case_id}</b> • Agent: {r.agent || 'Hermes Agent'} • Reason: {r.reason || (isAllowed ? 'Authorized same-matter access' : 'Unauthorized cross-matter access attempt')}
                   </div>
                 </div>
               </div>

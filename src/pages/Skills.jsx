@@ -407,7 +407,7 @@ export default function Skills() {
               <div className="history-banner-info">
                 <ShieldCheck size={16} color="var(--brand-primary)" style={{ flexShrink: 0, marginTop: 2 }} />
                 <span>
-                  <b>PRD P1-1 Rollback Safeguard:</b> Beaverly maintains immutable version snapshots for every habit correction. Rollback restores previous wording instantly with audit trail logging.
+                  <b>Version History & Rollback Safeguard:</b> Beaverly maintains immutable version snapshots for every habit correction. Rollback restores previous wording instantly with audit trail logging.
                 </span>
               </div>
 
@@ -455,7 +455,7 @@ export default function Skills() {
 
                           <div className="vhist-diff-box">
                             <div className="diff-row">
-                              <span className="diff-label">Pattern:</span>
+                              <span className="diff-label">Trigger:</span>
                               <code>"{v.trigger_pattern}"</code>
                             </div>
                             <div className="diff-arrow">
@@ -551,7 +551,7 @@ export default function Skills() {
 
                 <div className="form-group" style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                    Trigger Pattern / Archaic Phrase
+                    Trigger Phrase / Target Term (e.g. Party of the First Part)
                   </label>
                   <input
                     type="text"

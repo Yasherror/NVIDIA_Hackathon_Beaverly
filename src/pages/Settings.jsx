@@ -536,7 +536,7 @@ rules:
               </div>
               <div className="card-title-text">
                 <h3>Security Policy</h3>
-                <p>OpenShell process isolation and confidential client data protection</p>
+                <p>Ethical wall enforcement and client privilege protection</p>
               </div>
             </div>
             <span className="card-pill-tag locked">Enforced</span>
@@ -546,7 +546,7 @@ rules:
             
             <div className="toggle-row">
               <div className="toggle-info">
-                <div className="toggle-title">Strict Case Folder Isolation</div>
+                <div className="toggle-title">Strict Matter Privilege Isolation</div>
                 <div className="toggle-desc">Beaverly can only read files within the currently active case matter</div>
               </div>
               <div 
@@ -580,10 +580,10 @@ rules:
             <div className="toggle-row">
               <div className="toggle-info">
                 <div className="toggle-title" style={{display: 'flex', alignItems: 'center', gap: 6}}>
-                  <span>OpenShell Sandbox Container</span>
+                  <span>OpenShell Ethical Wall Container</span>
                   <Lock size={15} color="var(--brand-primary)" />
                 </div>
-                <div className="toggle-desc">Each legal case runs inside an isolated, immutable sandbox environment</div>
+                <div className="toggle-desc">Each legal matter is sealed inside an isolated, immutable privilege boundary</div>
               </div>
               <div className="custom-switch on locked" title="Mandatory Security Policy"></div>
             </div>

@@ -372,7 +372,7 @@ export default function PreSubmissionStudio({
                   setDraftText(e.target.value);
                   setActiveSampleId('custom');
                 }}
-                placeholder="Paste or edit legal draft here to audit against sandboxed matter documents..."
+                placeholder="Paste or edit legal draft here to audit against verified matter documents..."
               />
             </div>
 
