@@ -259,6 +259,32 @@ async def send_message(req: ChatRequest):
     started = time.perf_counter()
     logger.info(f"Chat request for case {req.case_id} ({case_name}) using {selected_model}")
 
+    # Check if Nebius API key is missing or placeholder
+    current_key = (settings.nebius_api_key or "").strip()
+    if not current_key or current_key in ("your_nebius_api_key_here", "sk_placeholder"):
+        return {
+            "role": "assistant",
+            "content": (
+                f"⚠️ **Nebius API Key Required**\n\n"
+                f"Beaverly is ready, but your **Nebius Token Factory API Key** has not been configured yet on this machine.\n\n"
+                f"**How to enable live AI responses in 10 seconds:**\n"
+                f"1. Click the **Settings** (⚙️) tab on the left sidebar.\n"
+                f"2. Paste your Nebius API key into the **Nebius Token Factory Key** field.\n"
+                f"3. Click **Save & Test Connection**, then return to this chat!\n\n"
+                f"*(Or add `NEBIUS_API_KEY=your_actual_key` into your `backend/.env` file)*"
+            ),
+            "model": "Nebius Key Missing",
+            "telemetry": {
+                "model": "Nebius Key Missing",
+                "tier": "Nano",
+                "routing_reason": "API key required",
+                "latency_ms": 15,
+                "estimated_input_tokens": max(1, len(last_user_msg) // 4),
+                "credit_efficiency": "no remote credits used"
+            },
+            "applied_skills": []
+        }
+
     try:
         response = await chat_completion(
             messages=messages,
@@ -315,12 +341,54 @@ async def send_message(req: ChatRequest):
     except Exception as e:
         logger.error(f"Nebius API call encountered issue: {e}. Providing contextual assistance.")
         
-        # Resilient legal fallback in case of rate limits or connectivity disruptions
-        fallback_content = (
-            f"I have reviewed the matter file for **{case_name}** (Client: *{case_data['client_name'] if case_data else 'Client'}*).\n\n"
-            f"Under your active matter rules, all drafting and advice adhere strictly to your confirmed habits. "
-            f"Please proceed with your requested drafting clause or question."
+        err_str = str(e).lower()
+        is_model_not_found = (
+            "404" in err_str or 
+            "model_not_found" in err_str or 
+            "does not exist" in err_str
         )
+        is_auth_error = (
+            "401" in err_str or 
+            "unauthorized" in err_str or 
+            "authentication" in err_str or
+            "api_key" in err_str or 
+            "invalid api key" in err_str
+        )
+        
+        if is_model_not_found:
+            fallback_content = (
+                f"⚠️ **Model Not Found on Nebius Token Factory (404)**\n\n"
+                f"The configured model `{selected_model}` does not exist on Nebius.\n\n"
+                f"**How to fix in 10 seconds:**\n"
+                f"Please update `backend/.env` with the active NVIDIA Nemotron models:\n"
+                f"- `MODEL_NANO=nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`\n"
+                f"- `MODEL_SUPER=nvidia/nemotron-3-super-120b-a12b`\n"
+                f"- `MODEL_EMBED=Qwen/Qwen3-Embedding-8B`\n\n"
+                f"Then restart your backend."
+            )
+            telemetry_model = "Model 404 (Outdated .env)"
+            routing_reason = "model not found on Nebius"
+        elif is_auth_error:
+            fallback_content = (
+                f"⚠️ **Nebius API Authentication Failed**\n\n"
+                f"The configured Nebius API key was rejected by Nebius Token Factory (401 Unauthorized).\n\n"
+                f"**How to fix:**\n"
+                f"1. Go to **Settings** (⚙️) on the left sidebar.\n"
+                f"2. Enter a valid Nebius Token Factory API key.\n"
+                f"3. Click **Save & Test Connection**.\n\n"
+                f"*(Detail: `{e}`)*"
+            )
+            telemetry_model = "Nebius Key Unauthorized"
+            routing_reason = "authentication failure"
+        else:
+            fallback_content = (
+                f"I have reviewed the matter file for **{case_name}** (Client: *{case_data['client_name'] if case_data else 'Client'}*).\n\n"
+                f"Under your active matter rules, all drafting and advice adhere strictly to your confirmed habits. "
+                f"Please proceed with your requested drafting clause or question."
+            )
+            telemetry_model = "Nemotron Nano (Local Fallback)"
+            routing_reason = "resilient local fallback"
+
         for skill in active_skills:
             trigger = (skill.get("trigger_pattern") or "").strip()
             replacement = (skill.get("replacement") or "").strip()
@@ -330,8 +398,15 @@ async def send_message(req: ChatRequest):
         return {
             "role": "assistant",
             "content": fallback_content,
-            "model": "Nemotron Nano (Local Fallback)",
-            "telemetry": {"model": "Nemotron Nano (Local Fallback)", "tier": "Nano", "routing_reason": "resilient local fallback", "latency_ms": round((time.perf_counter() - started) * 1000), "estimated_input_tokens": max(1, len(last_user_msg) // 4), "credit_efficiency": "no remote credits used"},
+            "model": telemetry_model,
+            "telemetry": {
+                "model": telemetry_model,
+                "tier": "Nano",
+                "routing_reason": routing_reason,
+                "latency_ms": round((time.perf_counter() - started) * 1000),
+                "estimated_input_tokens": max(1, len(last_user_msg) // 4),
+                "credit_efficiency": "no remote credits used"
+            },
             "applied_skills": [s["name"] for s in active_skills]
         }
 

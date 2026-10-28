@@ -41,6 +41,7 @@ export default function Settings({ setActiveTab }) {
     fetch(`${API_BASE_URL}/settings/`)
       .then(res => res.json())
       .then(data => {
+        if (data.nebius_api_key_masked) setApiKey(data.nebius_api_key_masked);
         if (data.read_isolation !== undefined) setReadIso(data.read_isolation === 'true');
         if (data.network_isolation !== undefined) setNetworkIso(data.network_isolation === 'true');
         if (data.pii_redaction !== undefined) setPiiRedact(data.pii_redaction === 'true');
@@ -94,25 +95,22 @@ export default function Settings({ setActiveTab }) {
   const handleTestConnection = async () => {
     setTestStatus('testing');
     try {
-      const res = await fetch(`${API_BASE_URL}/settings/status`);
-      if (res.ok) {
-        setTimeout(() => {
-          setTestStatus('success');
-          showToast('Nebius Token Factory connection verified (128ms)');
-          setTimeout(() => setTestStatus('idle'), 4000);
-        }, 600);
-      } else {
-        setTimeout(() => {
-          setTestStatus('idle');
-          showToast('Connection responded with error code');
-        }, 600);
+      if (apiKey && !apiKey.includes('••••')) {
+        await saveSetting('nebius_api_key', apiKey);
       }
-    } catch {
-      setTimeout(() => {
+      const res = await fetch(`${API_BASE_URL}/settings/status`);
+      const data = await res.json();
+      if (res.ok && data.connected) {
         setTestStatus('success');
-        showToast('Nebius Studio API verified (Simulated 128ms latency)');
+        showToast(`Nebius Token Factory verified: ${data.model_count || 30} models active`);
         setTimeout(() => setTestStatus('idle'), 4000);
-      }, 600);
+      } else {
+        setTestStatus('idle');
+        showToast(data.error ? `Connection error: ${data.error}` : 'Connection failed. Please check key.');
+      }
+    } catch (e) {
+      setTestStatus('idle');
+      showToast('Connection test failed: ' + e.message);
     }
   };
 
@@ -269,6 +267,7 @@ rules:
                   className="api-input" 
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
+                  onBlur={() => { if (apiKey && !apiKey.includes('••••')) saveSetting('nebius_api_key', apiKey); }}
                 />
                 <button className="eye-btn" onClick={() => setShowKey(!showKey)}>
                   {showKey ? <EyeOff size={18} /> : <Eye size={18} />}

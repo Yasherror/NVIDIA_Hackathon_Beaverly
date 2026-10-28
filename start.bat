@@ -4,7 +4,7 @@ echo Starting Beaverly: Local-First AI Assistant
 echo =======================================
 
 echo 1. Starting FastAPI Backend...
-start "Beaverly Backend" cmd /k "cd backend && uvicorn main:app --reload --port 8000"
+start "Beaverly Backend" cmd /k "cd backend && python -m uvicorn main:app --reload --port 8000"
 
 rem .\.venv312\Scripts\python.exe -m uvicorn main:app --reload --port 8000
 

@@ -12,6 +12,7 @@ def get_nebius_client() -> AsyncOpenAI:
     return AsyncOpenAI(
         api_key=settings.nebius_api_key,
         base_url=settings.nebius_base_url,
+        timeout=45.0,
     )
 
 
@@ -19,11 +20,12 @@ async def chat_completion(
     messages: list[dict],
     model: str = None,
     temperature: float = 0.3,
-    max_tokens: int = 2048,
+    max_tokens: int = 2500,
 ) -> str:
     """
     Single chat completion via Nebius Token Factory.
     Defaults to Nemotron Nano for speed.
+    Gracefully handles reasoning models (where thinking is in reasoning_content).
     """
     client = get_nebius_client()
     selected_model = model or settings.model_nano
@@ -36,7 +38,13 @@ async def chat_completion(
         temperature=temperature,
         max_tokens=max_tokens,
     )
-    return response.choices[0].message.content
+    choice = response.choices[0]
+    msg = choice.message
+    content = msg.content
+    if not content:
+        # Fallback to reasoning_content if thinking model placed output there
+        content = getattr(msg, "reasoning_content", None) or getattr(msg, "reasoning", None) or ""
+    return content.strip() if isinstance(content, str) else ""
 
 
 async def get_embedding(text: str) -> list[float]:
@@ -82,5 +90,3 @@ async def get_embeddings_batch(texts: list[str], batch_size: int = 25) -> list[l
                 all_embeddings.append([float(x / norm) for x in vals])
 
     return all_embeddings
-
-

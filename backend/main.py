@@ -4,6 +4,16 @@ Private AI assistant for solo lawyers and small firms.
 Core Formula: Learn → Scope → Remember → Apply → Verify
 """
 import os
+import sys
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning)
+
+# Ensure backend directory is always on sys.path regardless of execution root (e.g. Docker, root launch)
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -59,13 +69,12 @@ app.include_router(intelligence.router, prefix="/api/intelligence", tags=["Matte
 
 @app.get("/health")
 async def health_check():
+    """Healthcheck endpoint for Docker container orchestrators."""
     return {
         "status": "ok",
-        "service": "Beaverly API",
-        "mascot": "Barry the Beaver",
+        "service": "Beaverly Legal AI Platform",
         "version": "1.0.0",
-        "nebius_configured": bool(app_config.nebius_api_key),
-        "nebius_api_v1": app_config.nebius_base_url.rstrip("/").endswith("/v1"),
+        "nebius_connected": bool(app_config.nebius_api_key),
         "models": {
             "nano": app_config.model_nano,
             "super": app_config.model_super,

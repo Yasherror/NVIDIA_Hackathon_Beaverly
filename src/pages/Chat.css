@@ -1185,3 +1185,52 @@
   }
 }
 
+
+/* Protection Certificate Export Action Button */
+.certificate-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #FFFDFC 0%, #FAF0E4 100%);
+  border: 1.5px solid var(--border-dark);
+  border-radius: var(--radius-pill);
+  padding: 8px 14px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(74, 46, 27, 0.05);
+  transition: all var(--transition-fast);
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.certificate-button svg {
+  color: var(--brand-primary);
+  transition: transform var(--transition-fast);
+}
+
+.certificate-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #FAF0E4 0%, #F1DFCA 100%);
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(179, 117, 82, 0.18);
+}
+
+.certificate-button:hover:not(:disabled) svg {
+  transform: scale(1.15);
+}
+
+.certificate-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--bg-surface-alt);
+  border-color: var(--border-light);
+  color: var(--text-tertiary);
+  box-shadow: none;
+  transform: none;
+}

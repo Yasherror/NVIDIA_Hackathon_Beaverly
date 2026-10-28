@@ -69,6 +69,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   }, [threadsByCase]);
 
   const [activeThreadId, setActiveThreadId] = useState(null);
+  const [threadToDelete, setThreadToDelete] = useState(null);
   const [expandedCaseIds, setExpandedCaseIds] = useState(new Set());
   const [caseSearchQuery, setCaseSearchQuery] = useState('');
   const [caseFilterStatus, setCaseFilterStatus] = useState('all'); // 'all' | 'active' | 'closed'
@@ -167,6 +168,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   const [targetOriginalText, setTargetOriginalText] = useState('');
   const [userCorrectedText, setUserCorrectedText] = useState('');
   const [userCorrectionReason, setUserCorrectionReason] = useState('');
+  const [isAnalyzingSkill, setIsAnalyzingSkill] = useState(false);
   const fileInputRef = useRef(null);
   const [attachedDraft, setAttachedDraft] = useState(null);
   const messagesEndRef = useRef(null);
@@ -294,22 +296,37 @@ export default function Chat({ selectedCase, setSelectedCase }) {
     setActiveThreadId(newThreadId);
   };
 
-  const handleDeleteThread = (threadId, e) => {
+  const handleRequestDeleteThread = (thread, caseItem, e) => {
     if (e) e.stopPropagation();
-    if (!activeCase) return;
+    setThreadToDelete({
+      id: thread.id,
+      title: thread.title || 'Untitled Conversation',
+      caseId: caseItem.id,
+      caseTitle: caseItem.short_name || caseItem.client_name || caseItem.matter_id || 'Case Matter'
+    });
+  };
 
-    const existing = threadsByCase[activeCase.id] || getCaseThreads(activeCase.id);
-    if (existing.length <= 1) return;
+  const handleConfirmDeleteThread = () => {
+    if (!threadToDelete) return;
+
+    const { id: threadId, caseId } = threadToDelete;
+    const existing = threadsByCase[caseId] || getCaseThreads(caseId);
+    if (existing.length <= 1) {
+      setThreadToDelete(null);
+      return;
+    }
 
     const remaining = existing.filter(t => t.id !== threadId);
     setThreadsByCase(prev => ({
       ...prev,
-      [activeCase.id]: remaining
+      [caseId]: remaining
     }));
 
     if (activeThreadId === threadId) {
       setActiveThreadId(remaining[0].id);
     }
+
+    setThreadToDelete(null);
   };
 
   const appendAssistantMessage = (msgObj, targetCaseId = null) => {
@@ -821,7 +838,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
                             {threads.length > 1 && (
                               <button
                                 className="btn-delete-thread"
-                                onClick={(e) => handleDeleteThread(thread.id, e)}
+                                onClick={(e) => handleRequestDeleteThread(thread, c, e)}
                                 title="Delete conversation"
                               >
                                 <Trash2 size={13} />
@@ -941,7 +958,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
         </div>
 
         {/* Demo controls removed from the product UI. */}
-        <div style={{ display: 'none',
+        <div style={{
           padding: '10px 18px',
           backgroundColor: 'var(--bg-surface-alt)',
           borderBottom: '1px solid var(--border-light)',
@@ -1518,8 +1535,14 @@ export default function Chat({ selectedCase, setSelectedCase }) {
             <PanelRightClose size={18} />
           </button>
         </div>
-        <button className="certificate-button" onClick={() => activeCase && window.open(`${API_BASE_URL}/intelligence/cases/${activeCase.id}/certificate`, '_blank')}>
-          <Download size={15} /> Export protection certificate
+        <button 
+          className="certificate-button" 
+          onClick={() => activeCase && window.open(`${API_BASE_URL}/intelligence/cases/${activeCase.id}/certificate`, '_blank')}
+          disabled={!activeCase}
+          title={activeCase ? "Export verifiable OpenShell security certificate for this matter" : "Select an active case to export certificate"}
+        >
+          <ShieldCheck size={16} />
+          <span>Export Protection Certificate</span>
         </button>
         
         <div className="memory-card">
@@ -1679,6 +1702,119 @@ export default function Chat({ selectedCase, setSelectedCase }) {
                 ) : (
                   'Analyze & Teach Beaverly'
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Thread Deletion Secondary Confirmation Modal */}
+      {threadToDelete && (
+        <div className="modal-overlay" onClick={() => setThreadToDelete(null)}>
+          <div 
+            className="modal-content" 
+            style={{ maxWidth: '440px' }} 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  backgroundColor: '#FBEAEA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#B52B27',
+                  flexShrink: 0
+                }}>
+                  <Trash2 size={17} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Delete Conversation
+                  </h2>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                    Confirm thread removal
+                  </div>
+                </div>
+              </div>
+              <X 
+                size={18} 
+                style={{ cursor: 'pointer', color: 'var(--text-tertiary)', transition: 'color 0.2s' }} 
+                onClick={() => setThreadToDelete(null)} 
+              />
+            </div>
+
+            <div className="modal-body" style={{ padding: '20px 24px' }}>
+              <p style={{ margin: '0 0 14px', fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Are you sure you want to delete this conversation thread? This action cannot be undone.
+              </p>
+
+              <div style={{
+                backgroundColor: 'var(--bg-main)',
+                border: '1px solid var(--border-light)',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                marginBottom: '16px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.92rem', marginBottom: 4 }}>
+                  <MessageSquare size={16} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {threadToDelete.title}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>Matter:</span>
+                  <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>
+                    {threadToDelete.caseTitle}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{
+                backgroundColor: '#FDF7EE',
+                border: '1px solid #EADBCE',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                fontSize: '0.8rem',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                lineHeight: 1.45
+              }}>
+                <ShieldCheck size={16} color="var(--brand-primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <b>OpenShell Sandbox Safety:</b> Messages in this conversation will be permanently purged. Matter documents, global lawyer habits, and protection audit certificates remain untouched.
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: 10, borderTop: '1px solid var(--border-light)' }}>
+              <button 
+                className="btn-outline" 
+                onClick={() => setThreadToDelete(null)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-filled btn-confirm-delete" 
+                style={{ 
+                  backgroundColor: '#B52B27', 
+                  color: '#fff', 
+                  border: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6
+                }} 
+                onClick={handleConfirmDeleteThread}
+                type="button"
+              >
+                <Trash2 size={14} />
+                <span>Delete Conversation</span>
               </button>
             </div>
           </div>
