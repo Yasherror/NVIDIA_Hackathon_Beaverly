@@ -17,11 +17,11 @@ import beaverFenceDivider from '../assets/beaver_fence_divider.png';
 import './Chat.css';
 
 const REASONING_PHASES = [
-  "Verifying OpenShell eBPF kernel isolation boundary...",
-  "Loading Lawyer Memory & Case Facts from SQLite...",
-  "Querying LanceDB semantic vector embeddings...",
+  "Verifying ethical wall & matter confidentiality...",
+  "Applying lawyer habits & case records...",
+  "Searching contract clauses & evidentiary records...",
   "Routing context through Hermes Agent to Nemotron...",
-  "Synthesizing private citation-grounded draft..."
+  "Synthesizing citation-grounded legal draft..."
 ];
 
 const GENERAL_CASE = {
@@ -1712,7 +1712,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
             <div className="mem-icon-wrap"><Lock size={20} strokeWidth={2.5} /></div> Case Memory
           </div>
           <div className="mem-desc">
-            Facts belonging strictly to <b>{activeCase?.short_name || activeCase?.client_name || 'Active Case'}</b>. OpenShell kernel blocks cross-case reads.
+            Facts strictly isolated to <b>{activeCase?.short_name || activeCase?.client_name || 'Active Case'}</b>. Ethical wall prevents cross-matter disclosure.
           </div>
           <div className="mem-pill-container">
             <span className="mem-pill">Client: {activeCase?.client_name || 'Unknown'}</span>
@@ -1729,7 +1729,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
               <FolderOpen size={12} style={{ marginRight: 4, display: 'inline', verticalAlign: 'text-bottom' }} />
               Files: {activeCase?.files_count || 0} documents
             </span>
-            <span className="mem-pill">Status: {activeCase?.status === 'closed' ? 'Closed (Purged)' : 'Active (Sandboxed)'}</span>
+            <span className="mem-pill">Status: {activeCase?.status === 'closed' ? 'Closed (Data Shredded)' : 'Active (Privilege Protected)'}</span>
           </div>
 
           <button 

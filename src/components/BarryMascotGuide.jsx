@@ -16,7 +16,7 @@ export default function BarryMascotGuide({ activeTab, onSelectTab }) {
   const tipsByTab = {
     overview: {
       title: "Hello Counsel! I'm Barry the Beaver.",
-      speech: "Welcome to Beaverly! I learn how you work—without learning what I shouldn't. You can test my self-evolving memory, scope boundary detection, OpenShell kernel sandbox, and pre-submission audit live!",
+      speech: "Welcome to Beaverly! I learn how you work—without learning what I shouldn't. You can test my lawyer memory, confidential matter boundaries, ethical wall protection, and pre-submission audit live!",
       actionText: "Open Live Conversations",
       actionTarget: "chat",
       mascotImg: "/assets/mascot.png"
@@ -37,21 +37,21 @@ export default function BarryMascotGuide({ activeTab, onSelectTab }) {
     },
     cases: {
       title: "Strict Case Sandboxing",
-      speech: "Each matter gets an isolated workspace. OpenShell enforces this boundary at the Linux kernel/eBPF layer—so prompt injection attacks cannot force data across matter boundaries.",
+      speech: "Each matter gets an isolated workspace. OpenShell enforces an unbreakable ethical wall—so client secrets can never leak into other cases.",
       actionText: "View OpenShell Audit Logs",
       actionTarget: "logs",
       mascotImg: "/assets/mascot.png"
     },
     logs: {
       title: "OpenShell Protection Record",
-      speech: "Every access attempt is logged here in real-time. Notice the green ALLOW badges for authorized reads, and red DENY badges whenever cross-case traversal was blocked by eBPF security policies.",
+      speech: "Every access attempt is logged here in real-time. Notice the green ALLOW badges for verified case access, and red BLOCK badges whenever an unauthorized attempt to access another client's matter was stopped.",
       actionText: "Review Settings & Policies",
       actionTarget: "settings",
       mascotImg: "/assets/mascot.png"
     },
     settings: {
       title: "Local-First Settings (No Admin Needed)",
-      speech: "Beaverly is fully local to your machine. No multi-tenant cloud SaaS or central server. Your files and embeddings reside in SQLite and LanceDB directly on your device.",
+      speech: "Beaverly protects client privilege on your own terms. Your files and drafting rules reside in a private local vault, safe from third-party multi-tenant clouds.",
       actionText: "Return to Dashboard",
       actionTarget: "overview",
       mascotImg: "/assets/mascot.png"

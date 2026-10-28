@@ -302,8 +302,8 @@ export default function Cases({ setActiveTab, onOpenCase }) {
           <Lock size={48} color="var(--brand-primary)" style={{ opacity: 0.6, marginBottom: '16px' }} />
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '8px' }}>Clean Slate: No Active Matters</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.6, marginBottom: '24px' }}>
-            All case data, vector embeddings, and sandboxed documents have been purged.
-            Create a new client matter to establish an isolated OpenShell matter vault.
+            All client confidential records, matter notes, and documents have been shredded.
+            Create a new client matter to establish a private, privileged matter vault.
           </p>
           <button className="btn-filled" onClick={() => setShowNewCaseModal(true)} style={{ margin: '0 auto', padding: '10px 24px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             + Create New Client Matter
@@ -395,29 +395,29 @@ export default function Cases({ setActiveTab, onOpenCase }) {
             <div className="modal-header">
               <div style={{display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: '1.25rem', color: 'var(--text-primary)'}}>
                 <AlertTriangle size={24} color="#F09A37" fill="#FDF3E6" /> 
-                Close Case & Purge Memory
+                Close Matter & Shred Client Data
               </div>
               <X size={20} style={{cursor: 'pointer'}} onClick={() => setCaseToClose(null)} />
             </div>
             <div className="modal-body">
               <div style={{fontSize: '0.92rem', color: 'var(--text-secondary)', marginBottom: '16px'}}>
-                OpenShell zero-leak policy mandates physical deletion upon matter closure:
+                Firm compliance policy mandates client data destruction upon matter closure:
               </div>
               <div className="warning-block warning-block-delete">
                 <Trash2 size={22} style={{flexShrink: 0}} />
                 <div>
-                  Delete: <b>{purgeSummary ? purgeSummary.case_memories_count : 1}</b> case memories & skills,<br/>
-                  <b>{purgeSummary ? purgeSummary.case_documents_count : (activeCases.find(c => c.id === caseToClose)?.files_count || 0)}</b> sandboxed files & vector embeddings
+                  Delete: <b>{purgeSummary ? purgeSummary.case_memories_count : 1}</b> case notes & matter rules,<br/>
+                  <b>{purgeSummary ? purgeSummary.case_documents_count : (activeCases.find(c => c.id === caseToClose)?.files_count || 0)}</b> confidential client files & records
                 </div>
               </div>
               <div className="warning-block warning-block-keep">
                 <CheckCircle2 size={22} style={{flexShrink: 0}} />
-                <div>Keep: Global Lawyer Memory, Protection Record Audit Log</div>
+                <div>Keep: Your professional drafting habits, Certificate of destruction audit log</div>
               </div>
             </div>
             <div className="modal-footer" style={{marginTop: '20px'}}>
               <button className="btn-outline" onClick={() => setCaseToClose(null)}>Cancel</button>
-              <button className="btn-filled" style={{backgroundColor: '#B52B27'}} onClick={handleConfirmClose}>Confirm Purge & Close</button>
+              <button className="btn-filled" style={{backgroundColor: '#B52B27'}} onClick={handleConfirmClose}>Confirm Shred & Close</button>
             </div>
           </div>
         </div>

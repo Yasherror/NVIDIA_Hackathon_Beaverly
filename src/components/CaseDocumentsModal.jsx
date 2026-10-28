@@ -41,14 +41,14 @@ const UPLOAD_STAGES = [
     detail: 'Detecting section titles, indemnities, covenants & exhibits...',
   },
   {
-    shortLabel: 'Vectorizing',
-    label: 'Computing Qwen Vector Embeddings',
-    detail: 'Generating 4096-dimensional dense vector embeddings...',
+    shortLabel: 'Clause Analysis',
+    label: 'Analyzing Evidentiary Clauses',
+    detail: 'Parsing contract clauses and key legal terms with AI...',
   },
   {
-    shortLabel: 'LanceDB Index',
-    label: 'Persisting to Private LanceDB Store',
-    detail: 'Writing vector chunks & indexing for sub-second semantic retrieval...',
+    shortLabel: 'Vault Index',
+    label: 'Securing into Matter Vault',
+    detail: 'Writing searchable clauses for sub-second legal retrieval...',
   }
 ];
 
@@ -318,7 +318,7 @@ export default function CaseDocumentsModal({
               </div>
               <div className="case-docs-subtitle">
                 <ShieldCheck size={14} color="#2F6B45" />
-                <span>OpenShell Sandboxed Filesystem &bull; Isolated LanceDB Vector Space</span>
+                <span>Privileged Matter Vault &bull; Isolated Clause Index</span>
               </div>
             </div>
           </div>
@@ -336,7 +336,7 @@ export default function CaseDocumentsModal({
             <div className="case-docs-banner-content">
               <Database size={20} className="case-docs-banner-icon" />
               <div className="case-docs-banner-text">
-                <b>Local-First Sovereign Storage:</b> Files are embedded into <b>LanceDB (`db/lancedb/`)</b> and tracked in <b>SQLite (`db/beaverly.db`)</b>. Documents stay strictly inside this case's OpenShell container: <code>/sandboxes/{activeCase?.id || 'active'}/</code>. No cloud data leakage.
+                <b>Firm-Sovereign Private Storage:</b> Files are indexed into your private matter vault and verified locally. Documents stay strictly inside this case's confidential boundary: <code>/matters/{activeCase?.matter_id || 'active'}/</code>. No cloud data leakage.
               </div>
             </div>
           </div>
@@ -348,12 +348,12 @@ export default function CaseDocumentsModal({
               <span className="case-docs-stat-val">{documents.length}</span>
             </div>
             <div className="case-docs-stat-card">
-              <span className="case-docs-stat-label">Vector Chunks</span>
+              <span className="case-docs-stat-label">Searchable Clauses</span>
               <span className="case-docs-stat-val">{summaryMeta?.totalChunks || (documents.length * 22)}</span>
             </div>
             <div className="case-docs-stat-label-card case-docs-stat-card">
-              <span className="case-docs-stat-label">Vector Store</span>
-              <span className="case-docs-stat-val" style={{ fontSize: '0.88rem', color: '#2F6B45', paddingTop: 4 }}>LanceDB (Local)</span>
+              <span className="case-docs-stat-label">Evidence Index</span>
+              <span className="case-docs-stat-val" style={{ fontSize: '0.88rem', color: '#2F6B45', paddingTop: 4 }}>Private Local Vault</span>
             </div>
             <div className="case-docs-stat-card">
               <span className="case-docs-stat-label">Privilege</span>
@@ -723,7 +723,7 @@ export default function CaseDocumentsModal({
                   onClick={() => setReaderViewMode('chunks')}
                 >
                   <Layers size={13} />
-                  <span>AI Chunks ({previewData?.lancedb_chunks?.length || readingDoc.chunks_count || 44})</span>
+                  <span>Contract Clauses ({previewData?.lancedb_chunks?.length || readingDoc.chunks_count || 44})</span>
                 </button>
               </div>
 
@@ -804,13 +804,13 @@ export default function CaseDocumentsModal({
               ) : (
                 <div className="chunks-viewer-list">
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                    Showing all vector chunks indexed in LanceDB for <b>{readingDoc.name}</b>:
+                    Showing all searchable contract clauses extracted for <b>{readingDoc.name}</b>:
                   </div>
                   {(previewData?.lancedb_chunks || []).map((ch, idx) => (
                     <div key={idx} className="chunk-inspect-card">
                       <div className="chunk-inspect-header">
-                        <span>Chunk #{idx + 1} &bull; Page {ch.page}</span>
-                        <span style={{ color: '#2F6B45' }}>Qwen-4096d Vector Indexed</span>
+                        <span>Clause #{idx + 1} &bull; Page {ch.page}</span>
+                        <span style={{ color: '#2F6B45' }}>Verified Clause</span>
                       </div>
                       <div className="chunk-inspect-text">
                         {ch.chunk}
@@ -857,7 +857,7 @@ export default function CaseDocumentsModal({
                   </button>
                 </div>
                 <div className="pager-aux-label">
-                  OpenShell eBPF Guard Active
+                  Ethical Wall Guard Active
                 </div>
               </div>
             )}

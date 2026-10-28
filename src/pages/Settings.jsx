@@ -216,7 +216,7 @@ rules:
   };
 
   const handleClearCache = () => {
-    showToast('Temporary document chunk cache cleared (420 MB freed)');
+    showToast('Document search cache cleared (420 MB freed)');
   };
 
   return (
@@ -273,7 +273,7 @@ rules:
             <span className="nav-card-badge">2.3 GB / 10 GB</span>
           </div>
           <div className="nav-card-title">Data & Storage</div>
-          <div className="nav-card-sub">Local SQLite database, LanceDB vectors & logs</div>
+          <div className="nav-card-sub">Matter vault, searchable clauses & audit logs</div>
         </div>
       </div>
 
@@ -625,7 +625,7 @@ rules:
               </div>
               <div className="card-title-text">
                 <h3>Data Management & Storage</h3>
-                <p>Local SQLite database storage, LanceDB vectors, and skill backups</p>
+                <p>Local matter records, searchable contract clauses, and drafting skills</p>
               </div>
             </div>
             <span className="card-pill-tag">Local Only</span>
@@ -644,7 +644,7 @@ rules:
             </div>
             <div className="storage-pills-row">
               <span className="storage-sub-pill">📁 Cases: 1.2 GB</span>
-              <span className="storage-sub-pill">🧠 Vector Embeddings: 840 MB</span>
+              <span className="storage-sub-pill">🧠 Searchable Clauses: 840 MB</span>
               <span className="storage-sub-pill">🛡️ Audit Logs: 260 MB</span>
             </div>
           </div>
@@ -720,7 +720,7 @@ rules:
             <div className="about-tech-stack-row">
               <span className="tech-tag">Nebius Token Factory</span>
               <span className="tech-tag">NemoClaw Blueprint</span>
-              <span className="tech-tag">LanceDB Embedded</span>
+              <span className="tech-tag">Private Local Vault</span>
               <span className="tech-tag">SQLite Local</span>
               <span className="tech-tag">Apache 2.0</span>
             </div>

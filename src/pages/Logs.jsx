@@ -46,7 +46,7 @@ export default function Logs() {
         <div>
           <h1 className="logs-page-title">Protection Record</h1>
           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Linux LSM / eBPF Kernel Policy Audit Trail • Enforced by OpenShell
+            Matter Confidentiality & Ethical Wall Audit Trail • Enforced by OpenShell
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -94,7 +94,7 @@ export default function Logs() {
                 </div>
                 <div className="card-content">
                   <div className="card-title">
-                    {isAllowed ? `Allowed: ${r.resource}` : `Blocked: OpenShell eBPF Denied ${r.resource}`}
+                    {isAllowed ? `Verified: ${r.resource}` : `Blocked: Ethical Wall Prevented Access to ${r.resource}`}
                   </div>
                   <div className="card-subtext">
                     Case: <b>{r.case_id}</b> • Agent: {r.agent || 'Hermes Agent'} • Reason: {r.reason || (isAllowed ? 'Authorized same-case access' : 'Cross-tenant sandbox violation')}
