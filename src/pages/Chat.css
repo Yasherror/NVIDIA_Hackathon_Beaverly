@@ -474,7 +474,9 @@
 .chat-case-pill-container {
   position: relative;
   min-width: 0;
+  max-width: 260px;
   flex-shrink: 1;
+  overflow: hidden;
 }
 
 .chat-case-pill { 
@@ -491,10 +493,12 @@
   cursor: pointer; 
   transition: all var(--transition-fast); 
   box-shadow: var(--shadow-sm); 
-  max-width: 250px;
+  max-width: 100%;
+  min-width: 0;
   white-space: nowrap;
   user-select: none;
   border: none;
+  overflow: hidden;
 }
 .chat-case-pill:hover { 
   background-color: var(--brand-primary-hover); 
@@ -502,12 +506,13 @@
 }
 
 .case-pill-text {
-  max-width: 160px;
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: inline-block;
   vertical-align: middle;
+  flex-shrink: 1;
 }
 
 .chat-case-dropdown-menu {
@@ -1128,13 +1133,10 @@
   border-color: var(--brand-primary);
 }
 
-/* Responsive Breakpoints for Laptops and Smaller Monitors */
-@media (max-width: 1500px) {
-  .conversations-sidebar { 
-    width: 230px; 
-  }
-  .memory-sidebar { 
-    width: 230px; 
+/* Responsive Breakpoints for Laptops and All PC Monitor Widths */
+@media (max-width: 1600px) {
+  .router-telemetry .router-savings {
+    display: none;
   }
   .case-pill-text { 
     max-width: 120px; 
@@ -1142,34 +1144,30 @@
 }
 
 @media (max-width: 1400px) {
-  .chat-security-notice {
-    display: none;
-  }
   .conversations-sidebar { 
     width: 220px; 
   }
   .memory-sidebar { 
     width: 220px; 
   }
-  .chat-case-pill { 
-    max-width: 190px; 
-    padding: 5px 11px; 
-  }
   .case-pill-text { 
-    max-width: 105px; 
+    max-width: 100px; 
     font-size: 0.82rem; 
+  }
+  .btn-fact-check-studio .fact-check-p0-badge {
+    display: none;
+  }
+  .btn-fact-check-studio { 
+    padding: 6px 12px; 
+    font-size: 0.8rem; 
+  }
+  .btn-case-files-header {
+    padding: 6px 11px;
+    font-size: 0.8rem;
   }
   .chat-messages { 
     padding: 16px 20px; 
     gap: 16px; 
-  }
-  .btn-fact-check-studio { 
-    padding: 5px 11px; 
-    font-size: 0.78rem; 
-  }
-  .btn-case-files-header {
-    padding: 5px 11px;
-    font-size: 0.78rem;
   }
 }
 
@@ -1181,7 +1179,11 @@
     width: 200px; 
   }
   .case-pill-text { 
-    max-width: 85px; 
+    max-width: 80px; 
+  }
+  .router-telemetry {
+    padding: 4px 8px;
+    font-size: 0.68rem;
   }
 }
 

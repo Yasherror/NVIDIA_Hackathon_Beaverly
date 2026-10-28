@@ -882,7 +882,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
               <div 
                 className="chat-case-pill" 
                 onClick={() => setShowCaseDropdown(!showCaseDropdown)}
-                title={activeCase ? (activeCase.short_name || activeCase.client_name) : 'Select Case'}
+                title={activeCase ? `${activeCase.short_name || activeCase.client_name} • Matter #${activeCase.matter_id || '2026'} (OpenShell Sandboxed)` : 'Select Case'}
               >
                 <Folder size={16} />
                 <span className="case-pill-text">{activeCase ? (activeCase.short_name || activeCase.client_name) : 'Select Case'}</span>
@@ -911,13 +911,6 @@ export default function Chat({ selectedCase, setSelectedCase }) {
           </div>
 
           <div className="chat-header-right">
-            <div className="chat-security-notice" title={`OpenShell Sandboxed • Matter #${activeCase?.matter_id || '2026'}`}>
-              <Lock size={13} color="var(--brand-primary)" />
-              <span className="security-notice-text">
-                #{activeCase?.matter_id ? (activeCase.matter_id.startsWith('MATTER-2026-') ? activeCase.matter_id.replace('MATTER-2026-', '') : activeCase.matter_id) : '2026'}
-              </span>
-            </div>
-
             <div className="router-telemetry" title={telemetry?.routing_reason || 'Waiting for first request'}>
               <span className={`router-dot ${telemetry?.tier?.toLowerCase() || 'nano'}`} />
               <b>{telemetry?.tier || 'Nano'}</b>
