@@ -407,10 +407,10 @@
   border-bottom: 1px solid var(--border-light); 
   background-color: var(--bg-surface); 
   position: relative; 
-  gap: 10px;
+  gap: 12px;
   min-height: 56px;
   flex-wrap: nowrap;
-  overflow: hidden;
+  z-index: 20;
 }
 
 .chat-header-left {
@@ -476,7 +476,6 @@
   min-width: 0;
   max-width: 260px;
   flex-shrink: 1;
-  overflow: hidden;
 }
 
 .chat-case-pill { 
@@ -498,7 +497,6 @@
   white-space: nowrap;
   user-select: none;
   border: none;
-  overflow: hidden;
 }
 .chat-case-pill:hover { 
   background-color: var(--brand-primary-hover); 
@@ -522,11 +520,12 @@
   background-color: var(--bg-surface);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  min-width: 250px;
-  max-width: 320px;
-  z-index: 100;
-  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(74, 51, 32, 0.2);
+  min-width: 260px;
+  max-width: 340px;
+  max-height: 360px;
+  overflow-y: auto;
+  z-index: 1000;
 }
 
 .chat-case-dropdown-item {
