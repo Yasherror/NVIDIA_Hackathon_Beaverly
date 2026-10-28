@@ -605,17 +605,6 @@ export default function CaseDocumentsModal({
                             <span>Ask AI</span>
                           </button>
                         )}
-                        {onOpenFactCheckStudio && (
-                          <button 
-                            className="case-doc-btn"
-                            onClick={() => onOpenFactCheckStudio(doc.sample_snippet || '')}
-                            title="Audit or fact check in Pre-Submission Studio"
-                            style={{ color: '#d97706', borderColor: 'rgba(217, 119, 6, 0.4)' }}
-                          >
-                            <ShieldCheck size={13} color="#d97706" />
-                            <span>Fact Check</span>
-                          </button>
-                        )}
                         <button 
                           className="case-doc-btn"
                           onClick={() => handleDownload(doc)}
