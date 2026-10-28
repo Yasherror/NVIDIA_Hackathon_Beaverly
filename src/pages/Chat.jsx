@@ -9,7 +9,7 @@ import {
   Loader2, ShieldCheck, Plus, Trash2, PanelLeftClose, PanelLeftOpen,
   PanelRightClose, PanelRightOpen, Search,
   CheckCircle2, ShieldAlert, Clock, Download, Copy, Edit3, Globe, X, Wand2,
-  FolderOpen, FileText
+  FolderOpen, FileText, RotateCcw
 } from 'lucide-react';
 import PreSubmissionStudio from '../components/PreSubmissionStudio';
 import CaseDocumentsModal from '../components/CaseDocumentsModal';
@@ -62,7 +62,11 @@ export default function Chat({ selectedCase, setSelectedCase }) {
 
   const [threadsByCase, setThreadsByCase] = useState(() => {
     try {
-      const saved = localStorage.getItem('beaverly_chat_threads_v1');
+      // Automatically purge legacy v1 test chat history to ensure pristine fresh state
+      if (localStorage.getItem('beaverly_chat_threads_v1')) {
+        localStorage.removeItem('beaverly_chat_threads_v1');
+      }
+      const saved = localStorage.getItem('beaverly_chat_threads_v2');
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -72,7 +76,9 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   useEffect(() => {
     try {
       if (threadsByCase && Object.keys(threadsByCase).length > 0) {
-        localStorage.setItem('beaverly_chat_threads_v1', JSON.stringify(threadsByCase));
+        localStorage.setItem('beaverly_chat_threads_v2', JSON.stringify(threadsByCase));
+      } else {
+        localStorage.removeItem('beaverly_chat_threads_v2');
       }
     } catch (e) {
       console.warn('Failed to save threads to localStorage:', e);
@@ -288,6 +294,22 @@ export default function Chat({ selectedCase, setSelectedCase }) {
       const threads = threadsByCase[GENERAL_CASE.id] || getCaseThreads(GENERAL_CASE.id);
       if (threads.length > 0) {
         setActiveThreadId(threads[0].id);
+      }
+    }
+  };
+
+  const handleClearAllChats = () => {
+    if (window.confirm('Are you sure you want to clear all chat conversations? All cases, documents, and confirmed skills will be safely preserved.')) {
+      try {
+        localStorage.removeItem('beaverly_chat_threads_v1');
+        localStorage.removeItem('beaverly_chat_threads_v2');
+      } catch (e) {
+        console.warn(e);
+      }
+      setThreadsByCase({});
+      if (activeCase) {
+        const defaultThreads = getCaseThreads(activeCase.id);
+        setActiveThreadId(defaultThreads[0].id);
       }
     }
   };
@@ -776,6 +798,24 @@ export default function Chat({ selectedCase, setSelectedCase }) {
             <span className="conv-cases-badge" title={`${casesList.length} Total Cases`}>{casesList.length} cases</span>
           </div>
           <div className="conv-header-right">
+            <button 
+              className="btn-clear-all-threads"
+              onClick={handleClearAllChats}
+              title="Reset and clear all chat history (preserves cases)"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-tertiary)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px',
+                borderRadius: '4px',
+                marginRight: '2px'
+              }}
+            >
+              <RotateCcw size={15} />
+            </button>
             <button 
               className="btn-collapse-sidebar"
               onClick={() => setIsSidebarOpen(false)}

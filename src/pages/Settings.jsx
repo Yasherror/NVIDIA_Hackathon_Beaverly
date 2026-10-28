@@ -618,12 +618,18 @@ rules:
             <button 
               className="btn-card-danger"
               onClick={() => {
-                if (window.confirm('Are you sure you want to purge local cache data? Active cases will be preserved.')) {
-                  showToast('Local cache purged successfully');
+                if (window.confirm('Are you sure you want to clear all chat conversations and temporary cache? Active cases, documents, and skills will be safely preserved.')) {
+                  try {
+                    localStorage.removeItem('beaverly_chat_threads_v1');
+                    localStorage.removeItem('beaverly_chat_threads_v2');
+                  } catch (e) {
+                    console.warn(e);
+                  }
+                  showToast('All chat conversations and temporary cache cleared successfully');
                 }
               }}
             >
-              <AlertCircle size={15} /> Purge Temp Data
+              <AlertCircle size={15} /> Clear Chat & Temp Data
             </button>
           </div>
         </div>
