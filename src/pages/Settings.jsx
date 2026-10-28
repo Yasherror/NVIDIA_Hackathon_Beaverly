@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Key, ShieldCheck, Database, Eye, EyeOff, Lock, Brain, 
-  Info, ExternalLink, Check, Copy, RefreshCw, Download, AlertCircle
+  Info, ExternalLink, Check, Copy, RefreshCw, Download, AlertCircle, Trash2
 } from 'lucide-react';
 import './Settings.css';
 import { API_BASE_URL } from '../api/apiClient';
@@ -10,6 +10,7 @@ export default function Settings({ setActiveTab }) {
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [testStatus, setTestStatus] = useState('idle'); // 'idle' | 'testing' | 'success'
+  const [isConfigured, setIsConfigured] = useState(false);
 
   // Model Routing State
   const [routing, setRouting] = useState({
@@ -41,6 +42,7 @@ export default function Settings({ setActiveTab }) {
     fetch(`${API_BASE_URL}/settings/`)
       .then(res => res.json())
       .then(data => {
+        setIsConfigured(Boolean(data.nebius_configured));
         if (data.nebius_api_key_masked) {
           setApiKey(data.nebius_api_key_masked);
         } else {
@@ -109,6 +111,23 @@ export default function Settings({ setActiveTab }) {
     }
   };
 
+  const handleClearKey = async () => {
+    if (!window.confirm('Are you sure you want to clear and disconnect the Nebius API key?')) {
+      return;
+    }
+    try {
+      localStorage.removeItem('nebius_user_api_key');
+      setApiKey('');
+      setIsConfigured(false);
+      setTestStatus('idle');
+      await fetch(`${API_BASE_URL}/settings/api-key`, { method: 'DELETE' });
+      showToast('Nebius API key cleared. No active credentials stored.');
+    } catch (e) {
+      console.error(e);
+      showToast('Failed to clear key: ' + e.message);
+    }
+  };
+
   const handleTestConnection = async () => {
     setTestStatus('testing');
     try {
@@ -141,6 +160,7 @@ export default function Settings({ setActiveTab }) {
       const data = await res.json();
       if (res.ok && data.connected) {
         setTestStatus('success');
+        setIsConfigured(true);
         showToast(`Nebius Token Factory verified: ${data.model_count || 30} models active`);
         setTimeout(() => setTestStatus('idle'), 4000);
       } else {
@@ -342,13 +362,46 @@ rules:
                   'Test Connection'
                 )}
               </button>
+              {(apiKey || isConfigured) && (
+                <button 
+                  className="btn-clear-key"
+                  onClick={handleClearKey}
+                  title="Clear and remove Nebius API key"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '9px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-surface)',
+                    color: '#DC2626',
+                    cursor: 'pointer',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    marginLeft: '8px',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Trash2 size={15} /> Clear Key
+                </button>
+              )}
             </div>
           </div>
 
           <div className="api-meta-row">
             <div className="meta-status-wrap">
-              <span className="status-dot-pulse"></span>
-              <span>Nebius Token Factory · Connected</span>
+              {isConfigured ? (
+                <>
+                  <span className="status-dot-pulse"></span>
+                  <span>Nebius Token Factory · Connected</span>
+                </>
+              ) : (
+                <>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#9CA3AF', display: 'inline-block' }}></span>
+                  <span style={{ color: 'var(--text-tertiary)' }}>Nebius Token Factory · Not Configured</span>
+                </>
+              )}
             </div>
             <div className="meta-endpoint-text">
               api.studio.nebius.ai/v1

@@ -74,20 +74,40 @@ async def update_setting(data: SettingUpdate):
     val = data.value.strip()
 
     if key == "nebius_api_key":
-        cleaned = clean_nebius_key(val)
-        if cleaned and not cleaned.startswith("••") and not cleaned.startswith("sk_live_"):
-            app_settings.nebius_api_key = cleaned
-            val = cleaned
-            logger.info("Updated runtime Nebius API key from Settings.")
-            sync_key_to_env(cleaned)
+        if not val or val.lower() == "clear":
+            app_settings.nebius_api_key = ""
+            val = ""
+            logger.info("Cleared runtime Nebius API key from Settings.")
+            sync_key_to_env("")
+        else:
+            cleaned = clean_nebius_key(val)
+            if cleaned and not cleaned.startswith("••") and not cleaned.startswith("sk_live_"):
+                app_settings.nebius_api_key = cleaned
+                val = cleaned
+                logger.info("Updated runtime Nebius API key from Settings.")
+                sync_key_to_env(cleaned)
 
     async with aiosqlite.connect(app_settings.db_path) as db:
-        await db.execute(
-            "INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)",
-            (key, val)
-        )
+        if key == "nebius_api_key" and not val:
+            await db.execute("DELETE FROM app_settings WHERE key = 'nebius_api_key'")
+        else:
+            await db.execute(
+                "INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)",
+                (key, val)
+            )
         await db.commit()
     return {"updated": key, "status": "ok"}
+
+@router.delete("/api-key")
+async def clear_api_key():
+    """Completely remove stored Nebius API key from memory, SQLite, and .env."""
+    app_settings.nebius_api_key = ""
+    sync_key_to_env("")
+    async with aiosqlite.connect(app_settings.db_path) as db:
+        await db.execute("DELETE FROM app_settings WHERE key = 'nebius_api_key'")
+        await db.commit()
+    logger.info("Successfully purged Nebius API key via DELETE /api-key")
+    return {"status": "cleared", "nebius_configured": False}
 
 @router.get("/status")
 async def api_status():
