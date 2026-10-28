@@ -478,10 +478,13 @@ export default function Chat({ selectedCase, setSelectedCase }) {
     setIsLoading(true);
 
     try {
-      const backendMessages = updatedMessages.map(m => ({
-        role: m.role,
-        content: m.backendContent || m.content
-      }));
+      const backendMessages = updatedMessages
+        .filter(m => !m.isSkill && (m.backendContent || m.content))
+        .map(m => ({
+          role: m.role || 'user',
+          content: String(m.backendContent || m.content || '').trim()
+        }))
+        .filter(m => m.content.length > 0 && !m.content.startsWith('Error communicating with Beaverly backend'));
 
       const response = await apiClient.post('/chat/message', {
         case_id: cObj.id,
@@ -495,6 +498,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
         newItems.push({
           role: 'assistant',
           isSkill: true,
+          content: response.skill_question || "I noticed this preference. Should I remember this habit?",
           skillData: response.suggested_skill,
           skillQuestion: response.skill_question || "I noticed this preference. Should I remember this habit?"
         });

@@ -35,8 +35,8 @@ async def agent_status():
 
 
 class ChatMessage(BaseModel):
-    role: str   # "user" or "assistant"
-    content: str
+    role: str = "user"   # "user" or "assistant"
+    content: str = ""
 
 
 class ChatRequest(BaseModel):

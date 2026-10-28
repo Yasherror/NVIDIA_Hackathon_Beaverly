@@ -1,5 +1,25 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
+function formatErrorDetail(details, status) {
+  if (!details) return `HTTP error! status: ${status}`;
+  const detail = details.detail !== undefined ? details.detail : details.message;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.msg) {
+        const field = Array.isArray(item.loc) ? item.loc.slice(-1)[0] : '';
+        return field ? `${field}: ${item.msg}` : item.msg;
+      }
+      return JSON.stringify(item);
+    }).join('; ');
+  }
+  if (typeof detail === 'object' && detail !== null) {
+    return JSON.stringify(detail);
+  }
+  return `HTTP error! status: ${status}`;
+}
+
 function getAuthHeaders(extraHeaders = {}) {
   const userKey = (typeof window !== 'undefined' && localStorage.getItem('nebius_user_api_key')) || '';
   return {
@@ -17,7 +37,7 @@ export const apiClient = {
       });
       if (!response.ok) {
         const details = await response.json().catch(() => ({}));
-        throw new Error(details.detail || `HTTP error! status: ${response.status}`);
+        throw new Error(formatErrorDetail(details, response.status));
       }
       return await response.json();
     } catch (error) {
@@ -36,7 +56,7 @@ export const apiClient = {
       });
       if (!response.ok) {
         const details = await response.json().catch(() => ({}));
-        throw new Error(details.detail || `HTTP error! status: ${response.status}`);
+        throw new Error(formatErrorDetail(details, response.status));
       }
       return await response.json();
     } catch (error) {
@@ -51,7 +71,10 @@ export const apiClient = {
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) {
+      const details = await response.json().catch(() => ({}));
+      throw new Error(formatErrorDetail(details, response.status));
+    }
     return await response.json();
   },
 
@@ -63,7 +86,7 @@ export const apiClient = {
     });
     if (!response.ok) {
       const details = await response.json().catch(() => ({}));
-      throw new Error(details.detail || `HTTP error! status: ${response.status}`);
+      throw new Error(formatErrorDetail(details, response.status));
     }
     return await response.json();
   },
@@ -73,7 +96,10 @@ export const apiClient = {
       method: 'DELETE',
       headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) {
+      const details = await response.json().catch(() => ({}));
+      throw new Error(formatErrorDetail(details, response.status));
+    }
     return await response.json();
   }
 };
