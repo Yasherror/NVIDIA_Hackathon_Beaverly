@@ -456,14 +456,14 @@ export default function Skills() {
                           <div className="vhist-diff-box">
                             <div className="diff-row">
                               <span className="diff-label">Pattern:</span>
-                              <code>"{v.trigger_pattern}"</code>
+                              <code>{v.trigger_pattern ? `"${v.trigger_pattern}"` : '(General Drafting Rule)'}</code>
                             </div>
                             <div className="diff-arrow">
                               <ArrowRight size={14} />
                             </div>
                             <div className="diff-row">
                               <span className="diff-label">Enforced Replacement:</span>
-                              <code className="highlight-replacement">"{v.replacement}"</code>
+                              <code className="highlight-replacement">{v.replacement ? `"${v.replacement}"` : '(Firm Drafting Standard)'}</code>
                             </div>
                           </div>
 
