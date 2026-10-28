@@ -149,8 +149,7 @@ npm run dev
 
 ---
 
-## 👥 Team & Submission Information
+## ⚖️ Project Submission & License
 
 - **Track**: **Personal AI Track**
-- **Lead Developer**: Yii Rui
 - **License**: [Apache License 2.0](LICENSE)
