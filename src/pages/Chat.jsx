@@ -258,7 +258,10 @@ export default function Chat({ selectedCase, setSelectedCase }) {
       setActiveCase(selectedCase);
       const threads = threadsByCase[selectedCase.id] || getCaseThreads(selectedCase.id);
       if (threads.length > 0) {
-        setActiveThreadId(threads[0].id);
+        setActiveThreadId(prev => {
+          const belongsToCase = threads.some(t => t.id === prev);
+          return belongsToCase ? prev : threads[0].id;
+        });
       }
     }
   }, [selectedCase]);
@@ -275,11 +278,28 @@ export default function Chat({ selectedCase, setSelectedCase }) {
     setActiveCase(c);
     if (setSelectedCase) setSelectedCase(c);
     setShowCaseDropdown(false);
-    setExpandedCaseIds(prev => new Set([...prev, c.id]));
-    const threads = threadsByCase[c.id] || getCaseThreads(c.id);
-    if (threads.length > 0) {
-      setActiveThreadId(threads[0].id);
+    if (c) {
+      setExpandedCaseIds(prev => new Set([...prev, c.id]));
+      const threads = threadsByCase[c.id] || getCaseThreads(c.id);
+      if (threads.length > 0) {
+        setActiveThreadId(threads[0].id);
+      }
+    } else {
+      const threads = threadsByCase[GENERAL_CASE.id] || getCaseThreads(GENERAL_CASE.id);
+      if (threads.length > 0) {
+        setActiveThreadId(threads[0].id);
+      }
     }
+  };
+
+  const handleSelectThread = (thread, caseItem) => {
+    if (!caseItem) return;
+    if (activeCase?.id !== caseItem.id) {
+      setActiveCase(caseItem);
+      if (setSelectedCase) setSelectedCase(caseItem);
+      setExpandedCaseIds(prev => new Set([...prev, caseItem.id]));
+    }
+    setActiveThreadId(thread.id);
   };
 
   const handleCreateNewThread = (caseId, e) => {
@@ -882,32 +902,35 @@ export default function Chat({ selectedCase, setSelectedCase }) {
 
                   {isExpanded && (
                     <div className="conv-list">
-                      {threads.map(thread => (
-                        <div 
-                          key={thread.id} 
-                          className={`conv-item ${currentThread?.id === thread.id ? 'active' : ''}`}
-                          onClick={() => setActiveThreadId(thread.id)}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                            <div className="conv-item-title">
-                              <MessageSquare size={15} />
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 170 }}>
-                                {thread.title}
-                              </span>
+                      {threads.map(thread => {
+                        const isThreadActive = isCurrent && (currentThread?.id === thread.id);
+                        return (
+                          <div 
+                            key={thread.id} 
+                            className={`conv-item ${isThreadActive ? 'active' : ''}`}
+                            onClick={() => handleSelectThread(thread, c)}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                              <div className="conv-item-title">
+                                <MessageSquare size={15} />
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 170 }}>
+                                  {thread.title}
+                                </span>
+                              </div>
+                              {threads.length > 1 && (
+                                <button
+                                  className="btn-delete-thread"
+                                  onClick={(e) => handleRequestDeleteThread(thread, c, e)}
+                                  title="Delete conversation"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
                             </div>
-                            {threads.length > 1 && (
-                              <button
-                                className="btn-delete-thread"
-                                onClick={(e) => handleRequestDeleteThread(thread, c, e)}
-                                title="Delete conversation"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            )}
+                            <div className="conv-item-time">{thread.time}</div>
                           </div>
-                          <div className="conv-item-time">{thread.time}</div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       <button 
                         className="btn-new-conversation"
