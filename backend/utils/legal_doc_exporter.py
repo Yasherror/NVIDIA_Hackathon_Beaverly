@@ -1,4 +1,5 @@
 import os
+import re
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, Table, TableStyle, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -314,4 +315,130 @@ def ensure_valid_binary_document(target_path: str, doc_name: str, case_id: str, 
         if not is_valid_docx:
             generate_valid_legal_docx(target_path, doc_name, case_id)
 
+    return target_path
+
+
+def export_draft_to_pdf(
+    target_path: str,
+    doc_title: str,
+    text_content: str,
+    case_id: str = "General Consultation",
+    matter_id: str = "MATTER-ADVISORY",
+    client_name: str = "Legal Counsel",
+    opponent: str = "None Specified"
+) -> str:
+    """Compile arbitrary legal text/draft from Chat or Studio into a formatted, verified legal PDF."""
+    os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)
+    doc = SimpleDocTemplate(
+        target_path,
+        pagesize=letter,
+        leftMargin=54,
+        rightMargin=54,
+        topMargin=54,
+        bottomMargin=54
+    )
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "DocTitle",
+        parent=styles["Heading1"],
+        fontName="Helvetica-Bold",
+        fontSize=15,
+        leading=19,
+        textColor=colors.HexColor("#20332A"),
+        alignment=1,
+        spaceAfter=4
+    )
+
+    sec_title_style = ParagraphStyle(
+        "SectionHeading",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=11,
+        leading=15,
+        textColor=colors.HexColor("#20332A"),
+        spaceBefore=8,
+        spaceAfter=4
+    )
+
+    body_style = ParagraphStyle(
+        "LegalBody",
+        parent=styles["Normal"],
+        fontName="Times-Roman",
+        fontSize=10,
+        leading=14.5,
+        textColor=colors.HexColor("#242926"),
+        spaceAfter=8
+    )
+
+    meta_label_style = ParagraphStyle(
+        "MetaLabel",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=7.5,
+        leading=10,
+        textColor=colors.HexColor("#6B7C72")
+    )
+
+    meta_val_style = ParagraphStyle(
+        "MetaValue",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=8,
+        leading=10.5,
+        textColor=colors.HexColor("#20332A")
+    )
+
+    story = []
+    story.append(Spacer(1, 10))
+    story.append(Paragraph(doc_title.upper(), title_style))
+    story.append(Spacer(1, 4))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#B37552"), spaceBefore=2, spaceAfter=8))
+
+    meta_table_data = [
+        [
+            Paragraph("CASE / MATTER ID:", meta_label_style),
+            Paragraph(f"<b>{matter_id or case_id}</b>", meta_val_style),
+            Paragraph("SECURITY STATUS:", meta_label_style),
+            Paragraph("<b>OpenShell Isolated Draft</b>", meta_val_style)
+        ],
+        [
+            Paragraph("PARTIES / CLIENT:", meta_label_style),
+            Paragraph(f"{client_name} v. {opponent}", meta_val_style),
+            Paragraph("DOCUMENT TYPE:", meta_label_style),
+            Paragraph("<b>Formal Legal Work Product</b>", meta_val_style)
+        ]
+    ]
+    meta_table = Table(meta_table_data, colWidths=[110, 150, 110, 134])
+    meta_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FBF7F2")),
+        ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor("#E5D9CB")),
+        ('INNERGRID', (0,0), (-1,-1), 0.4, colors.HexColor("#EFE3D3")),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('LEFTPADDING', (0,0), (-1,-1), 6),
+        ('RIGHTPADDING', (0,0), (-1,-1), 6),
+    ]))
+    story.append(meta_table)
+    story.append(Spacer(1, 12))
+
+    # Clean text: remove markdown backtick blocks (e.g. ```text ... ```) and base64 junk if present
+    clean_text = text_content.strip()
+    if clean_text.startswith("```") and clean_text.endswith("```"):
+        first_newline = clean_text.find("\n")
+        if first_newline != -1:
+            clean_text = clean_text[first_newline + 1:-3].strip()
+
+    raw_paragraphs = [p.strip() for p in clean_text.split("\n\n") if p.strip()]
+    for p in raw_paragraphs:
+        if p.startswith("#") or (len(p) < 80 and (p.startswith("Section ") or p.startswith("Article ") or p.isupper())) or re.match(r'^\d+\.\s+[A-Z]', p):
+            heading_text = p.lstrip("#").strip()
+            story.append(Paragraph(heading_text, sec_title_style))
+        else:
+            escaped = p.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            formatted = escaped.replace("\n", "<br/>")
+            formatted = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', formatted)
+            story.append(Paragraph(formatted, body_style))
+
+    doc.build(story, canvasmaker=NumberedCanvas)
     return target_path

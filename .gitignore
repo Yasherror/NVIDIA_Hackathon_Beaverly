@@ -27,6 +27,7 @@ dist-ssr
 *.db
 backend/db/
 backend/uploads/
+backend/sandboxes/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/*.pyc

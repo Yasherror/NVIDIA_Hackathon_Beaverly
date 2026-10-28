@@ -72,7 +72,8 @@ Operating Guidelines:
 2. Strictly adhere to case boundaries: never disclose or mix facts from other cases.
 3. Refer directly to the active matter context, client name, and opposing party provided.
 4. If asked about facts, parties, or entities from another case, refuse clearly and cite Beaverly's strict case isolation policy.
-5. Offer actionable legal drafts and adhere to confirmed lawyer skills and preferences automatically."""
+5. Offer actionable legal drafts and adhere to confirmed lawyer skills and preferences automatically.
+6. Always draft formal legal responses, letters, and clauses directly as clean, formatted text. NEVER output raw base64 data strings or advise users to use terminal decoders to view PDFs. Beaverly UI provides integrated 'Export PDF' and 'Audit in Studio' buttons directly on your responses for downloading and fact-checking."""
 
 
 async def load_active_skills(case_id: str) -> list[dict]:

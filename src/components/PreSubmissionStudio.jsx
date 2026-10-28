@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ShieldCheck, AlertCircle, AlertTriangle, CheckCircle2, 
+  ShieldCheck, Download, AlertCircle, AlertTriangle, CheckCircle2, 
   ArrowRight, FileText, Sparkles, Copy, Check, RotateCcw, 
   X, Loader2, ExternalLink, Send, BookOpen, Filter
 } from 'lucide-react';
 import { apiClient } from '../api/apiClient';
+import { API_BASE_URL } from '../api/apiClient';
 import './PreSubmissionStudio.css';
 
 const DEFAULT_SAMPLE = {
@@ -175,6 +176,47 @@ export default function PreSubmissionStudio({
       runAudit(activeText, selectedDocFilter);
     }
   }, [isOpen, initialDraft]);
+
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleExportVerifiedPdf = async () => {
+    if (!draftText.trim()) return;
+    setIsExportingPdf(true);
+    try {
+      const docTitle = activeCase?.short_name
+        ? `${activeCase.short_name} Verified Draft`
+        : 'Verified Legal Document';
+      const response = await fetch(`${API_BASE_URL}/intelligence/export-draft-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('nebius_user_api_key')
+            ? { 'X-Nebius-Api-Key': localStorage.getItem('nebius_user_api_key') }
+            : {})
+        },
+        body: JSON.stringify({
+          title: docTitle,
+          content: draftText,
+          case_id: activeCase?.id || 'general'
+        })
+      });
+      if (!response.ok) throw new Error('PDF export failed');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${docTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Export error:', e);
+      alert('Failed to export PDF document.');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   const handleDocFilterChange = (newDoc) => {
     setSelectedDocFilter(newDoc);
@@ -520,6 +562,30 @@ export default function PreSubmissionStudio({
           </div>
 
           <div className="studio-footer-actions">
+            <button 
+              className="btn-export-pdf" 
+              onClick={handleExportVerifiedPdf}
+              disabled={isExportingPdf || !draftText.trim()}
+              title="Download verified draft as an authentic legal PDF"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#FBF7F2',
+                border: '1px solid #E5D9CB',
+                borderRadius: '8px',
+                padding: '9px 16px',
+                fontSize: '0.86rem',
+                fontWeight: 600,
+                color: '#4A3626',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                marginRight: '8px'
+              }}
+            >
+              <Download size={15} color="var(--brand-primary)" />
+              <span>{isExportingPdf ? 'Exporting PDF...' : 'Export Verified PDF'}</span>
+            </button>
             <button 
               className="btn-run-audit" 
               onClick={() => runAudit(draftText, selectedDocFilter)}

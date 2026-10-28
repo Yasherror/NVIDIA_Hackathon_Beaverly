@@ -8,6 +8,7 @@ import aiosqlite
 from urllib.parse import unquote, quote
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, FileResponse
+from pydantic import BaseModel
 
 from loguru import logger
 
@@ -156,9 +157,58 @@ async def remove_case_document(case_id: str, doc_name: str):
     return {"status": "purged", "doc_name": doc_name, "case_id": case_id, "remaining_count": actual_count}
 
 try:
-    from utils.legal_doc_exporter import ensure_valid_binary_document
+    from utils.legal_doc_exporter import ensure_valid_binary_document, export_draft_to_pdf
 except ImportError:
-    from backend.utils.legal_doc_exporter import ensure_valid_binary_document
+    from backend.utils.legal_doc_exporter import ensure_valid_binary_document, export_draft_to_pdf
+
+class ExportDraftPdfRequest(BaseModel):
+    title: str = "Legal Response Letter"
+    content: str
+    case_id: str | None = None
+
+@router.post("/export-draft-pdf")
+async def export_draft_pdf_endpoint(req: ExportDraftPdfRequest):
+    """Export arbitrary drafted legal text (from Chat or Fact Check Studio) as a formal downloadable PDF."""
+    if not req.content or not req.content.strip():
+        raise HTTPException(400, "Draft content cannot be empty")
+
+    client_name = "Legal Counsel"
+    opponent = "Designated Counterparty"
+    matter_id = "MATTER-ADVISORY"
+
+    if req.case_id and req.case_id not in ("general", "None"):
+        async with aiosqlite.connect(settings.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT * FROM cases WHERE id=?", (req.case_id,)) as cur:
+                c = await cur.fetchone()
+                if c:
+                    client_name = c['client_name'] or client_name
+                    opponent = c['opponent'] or opponent
+                    matter_id = c['matter_id'] or matter_id
+
+    out_dir = os.path.join(settings.sandboxes_path, req.case_id or "general", "exports")
+    os.makedirs(out_dir, exist_ok=True)
+
+    safe_title = "".join(c for c in req.title if c.isalnum() or c in (" ", "_", "-")).strip() or "Legal_Draft"
+    pdf_filename = f"{safe_title.replace(' ', '_')}.pdf"
+    pdf_path = os.path.join(out_dir, pdf_filename)
+
+    export_draft_to_pdf(
+        target_path=pdf_path,
+        doc_title=req.title,
+        text_content=req.content,
+        case_id=req.case_id or "General Advisory",
+        matter_id=matter_id,
+        client_name=client_name,
+        opponent=opponent
+    )
+
+    return FileResponse(
+        path=pdf_path,
+        media_type="application/pdf",
+        filename=pdf_filename,
+        headers={"Content-Disposition": f'attachment; filename="{pdf_filename}"'}
+    )
 
 @router.get("/cases/{case_id}/documents/{doc_name}/download")
 async def download_case_document(case_id: str, doc_name: str):

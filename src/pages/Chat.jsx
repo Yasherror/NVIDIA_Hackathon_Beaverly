@@ -496,6 +496,54 @@ export default function Chat({ selectedCase, setSelectedCase }) {
     }
   };
 
+  const [exportingMessageId, setExportingMessageId] = useState(null);
+
+  const handleExportPdf = async (text, msgIdx = null) => {
+    if (!text || !text.trim()) return;
+    setExportingMessageId(msgIdx);
+    try {
+      const cObj = activeCase || GENERAL_CASE;
+      const docTitle = cObj.short_name && cObj.short_name !== 'General Consultation'
+        ? `${cObj.short_name} Response Letter`
+        : 'Legal Draft Document';
+      
+      const response = await fetch(`${API_BASE_URL}/intelligence/export-draft-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('nebius_user_api_key')
+            ? { 'X-Nebius-Api-Key': localStorage.getItem('nebius_user_api_key') }
+            : {})
+        },
+        body: JSON.stringify({
+          title: docTitle,
+          content: text,
+          case_id: cObj.id
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`PDF Export failed with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cleanFilename = `${docTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+      a.download = cleanFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF export error:', err);
+      alert('Unable to generate PDF from draft. Please ensure backend is running.');
+    } finally {
+      setExportingMessageId(null);
+    }
+  };
+
   const handleConfirmSkill = async (messageIndex, skillData, chosenScope = null) => {
     if (!activeCase) return;
     const finalScope = chosenScope || skillData.scope || 'global';
@@ -1285,6 +1333,15 @@ export default function Chat({ selectedCase, setSelectedCase }) {
                         >
                           <ShieldCheck size={13} color="var(--brand-primary)" />
                           <span>Audit in Studio</span>
+                        </button>
+                        <button 
+                          className="msg-action-btn"
+                          onClick={() => handleExportPdf(msg.content, idx)}
+                          title="Export and download this draft as a formal legal PDF"
+                          disabled={exportingMessageId === idx}
+                        >
+                          <Download size={13} color="var(--brand-primary)" />
+                          <span>{exportingMessageId === idx ? 'Exporting...' : 'Export PDF'}</span>
                         </button>
                         <button 
                           className="msg-action-btn"
