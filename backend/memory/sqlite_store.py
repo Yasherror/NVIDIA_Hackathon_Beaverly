@@ -161,6 +161,17 @@ async def init_db():
             WHERE NOT EXISTS (SELECT 1 FROM skill_versions sv WHERE sv.skill_id = s.id)
         """)
 
+        # Auto-restore Nebius API key from database if config is empty or placeholder
+        async with db.execute("SELECT value FROM app_settings WHERE key='nebius_api_key'") as cur:
+            row = await cur.fetchone()
+            if row and row[0]:
+                saved_key = str(row[0]).strip()
+                if saved_key and not saved_key.startswith("••"):
+                    from config import settings
+                    if not settings.nebius_api_key or settings.nebius_api_key in ("your_nebius_api_key_here", ""):
+                        settings.nebius_api_key = saved_key
+                        logger.info("Restored persisted Nebius API key from SQLite.")
+
         await db.commit()
     logger.info(f"SQLite DB initialized and primed at {DB_PATH}")
 
