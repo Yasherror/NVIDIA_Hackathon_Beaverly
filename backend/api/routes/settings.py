@@ -21,6 +21,32 @@ def clean_nebius_key(raw: str) -> str:
         cleaned = cleaned.split("=", 1)[1].strip().strip('"').strip("'")
     return cleaned.split()[0] if cleaned else ""
 
+import os
+
+def sync_key_to_env(clean_key: str):
+    """Sync updated API key back to .env files so both SQLite and .env stay consistent."""
+    if not clean_key or clean_key.startswith("sk_live_"):
+        return
+    backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    env_paths = [
+        os.path.join(backend_dir, ".env"),
+        os.path.join(os.path.dirname(backend_dir), ".env"),
+    ]
+    for p in env_paths:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    file_text = f.read()
+                if re.search(r"^NEBIUS_API_KEY=.*$", file_text, flags=re.MULTILINE):
+                    new_file_text = re.sub(r"^NEBIUS_API_KEY=.*$", f"NEBIUS_API_KEY={clean_key}", file_text, flags=re.MULTILINE)
+                else:
+                    new_file_text = file_text + f"\nNEBIUS_API_KEY={clean_key}\n"
+                with open(p, "w", encoding="utf-8") as f:
+                    f.write(new_file_text)
+                logger.info(f"Auto-synced Nebius API key to {p}")
+            except Exception as e:
+                logger.warning(f"Could not auto-sync key to {p}: {e}")
+
 class SettingUpdate(BaseModel):
     key: str
     value: str
@@ -53,6 +79,7 @@ async def update_setting(data: SettingUpdate):
             app_settings.nebius_api_key = cleaned
             val = cleaned
             logger.info("Updated runtime Nebius API key from Settings.")
+            sync_key_to_env(cleaned)
 
     async with aiosqlite.connect(app_settings.db_path) as db:
         await db.execute(
