@@ -95,8 +95,9 @@ export default function Settings({ setActiveTab }) {
   const handleTestConnection = async () => {
     setTestStatus('testing');
     try {
-      if (apiKey && !apiKey.includes('••••')) {
-        await saveSetting('nebius_api_key', apiKey);
+      const cleanKey = (apiKey || '').trim();
+      if (cleanKey && !cleanKey.includes('••••')) {
+        await saveSetting('nebius_api_key', cleanKey);
       }
       const res = await fetch(`${API_BASE_URL}/settings/status`);
       const data = await res.json();
@@ -106,7 +107,8 @@ export default function Settings({ setActiveTab }) {
         setTimeout(() => setTestStatus('idle'), 4000);
       } else {
         setTestStatus('idle');
-        showToast(data.error ? `Connection error: ${data.error}` : 'Connection failed. Please check key.');
+        const errMsg = data.error || data.detail || 'Connection failed. Please check your key.';
+        showToast(errMsg);
       }
     } catch (e) {
       setTestStatus('idle');

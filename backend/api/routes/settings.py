@@ -50,11 +50,12 @@ async def update_setting(data: SettingUpdate):
 @router.get("/status")
 async def api_status():
     """Verify active connection to Nebius Token Factory."""
-    api_key = app_settings.nebius_api_key
-    if not api_key:
+    api_key = (app_settings.nebius_api_key or "").strip()
+    if not api_key or api_key in ("your_nebius_api_key_here", ""):
         return {
             "api_configured": False,
             "connected": False,
+            "error": "No Nebius API key configured. Please paste your key in the box above.",
             "detail": "No Nebius API key configured in .env or Settings",
             "model_nano": app_settings.model_nano,
             "model_super": app_settings.model_super,
