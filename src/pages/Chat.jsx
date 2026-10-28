@@ -24,6 +24,17 @@ const REASONING_PHASES = [
   "Synthesizing private citation-grounded draft..."
 ];
 
+const GENERAL_CASE = {
+  id: 'general',
+  matter_id: 'GENERAL',
+  short_name: 'General Consultation',
+  client_name: 'General Legal Inquiry',
+  opponent: '',
+  practice_area: 'General Legal Practice',
+  status: 'active',
+  files_count: 0
+};
+
 export default function Chat({ selectedCase, setSelectedCase }) {
   const { refreshSkills, globalSkills } = useAppContext();
   const [casesList, setCasesList] = useState([]);
@@ -212,7 +223,8 @@ export default function Chat({ selectedCase, setSelectedCase }) {
     e.target.value = '';
   };
 
-  const currentCaseThreads = activeCase ? (threadsByCase[activeCase.id] || getCaseThreads(activeCase.id)) : [];
+  const effectiveCase = activeCase || GENERAL_CASE;
+  const currentCaseThreads = threadsByCase[effectiveCase.id] || getCaseThreads(effectiveCase.id);
   const currentThread = currentCaseThreads.find(t => t.id === activeThreadId) || currentCaseThreads[0] || null;
   const activeMessages = currentThread?.messages || [];
 
@@ -330,7 +342,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   };
 
   const appendAssistantMessage = (msgObj, targetCaseId = null) => {
-    const cid = targetCaseId || activeCase?.id;
+    const cid = targetCaseId || activeCase?.id || GENERAL_CASE.id;
     if (!cid) return;
     const thisThreadId = currentThread?.id || `${cid}-t1`;
     setThreadsByCase(prev => {
@@ -351,7 +363,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   };
 
   const appendUserMessage = (text, targetCaseId = null) => {
-    const cid = targetCaseId || activeCase?.id;
+    const cid = targetCaseId || activeCase?.id || GENERAL_CASE.id;
     if (!cid) return;
     const thisThreadId = currentThread?.id || `${cid}-t1`;
     const userMessage = { role: 'user', content: text };
@@ -373,9 +385,9 @@ export default function Chat({ selectedCase, setSelectedCase }) {
   };
 
   const handleSend = async (customText = null, targetCaseObj = null) => {
-    const cObj = targetCaseObj || activeCase;
+    const cObj = targetCaseObj || activeCase || GENERAL_CASE;
     const textToSend = customText !== null ? customText : input;
-    if ((!textToSend.trim() && !attachedDraft) || !cObj) return;
+    if (!textToSend.trim() && !attachedDraft) return;
 
     const currentDraft = attachedDraft;
     // Clear draft attachment from input bar immediately
@@ -891,6 +903,17 @@ export default function Chat({ selectedCase, setSelectedCase }) {
 
               {showCaseDropdown && (
                 <div className="chat-case-dropdown-menu">
+                  <div
+                    onClick={() => {
+                      setActiveCase(null);
+                      if (setSelectedCase) setSelectedCase(null);
+                      setShowCaseDropdown(false);
+                    }}
+                    className={`chat-case-dropdown-item ${!activeCase ? 'active' : ''}`}
+                    style={{ borderBottom: '1px solid var(--border-light)', fontWeight: 600 }}
+                  >
+                    <span>⚖️ General Legal Consultation</span>
+                  </div>
                   {casesList.map(c => (
                     <div 
                       key={c.id}
@@ -1500,7 +1523,7 @@ export default function Chat({ selectedCase, setSelectedCase }) {
             </div>
             <input 
               type="text" 
-              placeholder={`Ask Beaverly anything about ${activeCase ? (activeCase.short_name || activeCase.client_name) : 'this case'}...`}
+              placeholder={activeCase ? `Ask Beaverly anything about ${activeCase.short_name || activeCase.client_name}...` : `Ask Beaverly any legal question or draft request...`}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
