@@ -57,6 +57,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi import Request
+
+@app.middleware("http")
+async def extract_client_api_key(request: Request, call_next):
+    header_key = request.headers.get("x-nebius-api-key")
+    if header_key and header_key.startswith("v1."):
+        from api.routes.settings import clean_nebius_key
+        cleaned = clean_nebius_key(header_key)
+        if cleaned and not cleaned.startswith("sk_live_"):
+            app_config.nebius_api_key = cleaned
+    response = await call_next(request)
+    return response
+
 # --- Register routes ---
 app.include_router(cases.router,        prefix="/api/cases",        tags=["Cases"])
 app.include_router(skills.router,       prefix="/api/skills",       tags=["Skills"])

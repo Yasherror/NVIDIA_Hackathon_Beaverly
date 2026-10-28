@@ -41,8 +41,17 @@ export default function Settings({ setActiveTab }) {
     fetch(`${API_BASE_URL}/settings/`)
       .then(res => res.json())
       .then(data => {
-        if (data.nebius_api_key_masked) setApiKey(data.nebius_api_key_masked);
-        else setApiKey('');
+        if (data.nebius_api_key_masked) {
+          setApiKey(data.nebius_api_key_masked);
+        } else {
+          const localSavedKey = localStorage.getItem('nebius_user_api_key') || '';
+          if (localSavedKey && localSavedKey.startsWith('v1.')) {
+            setApiKey(localSavedKey);
+            saveSetting('nebius_api_key', localSavedKey);
+          } else {
+            setApiKey('');
+          }
+        }
         if (data.read_isolation !== undefined) setReadIso(data.read_isolation === 'true');
         if (data.network_isolation !== undefined) setNetworkIso(data.network_isolation === 'true');
         if (data.pii_redaction !== undefined) setPiiRedact(data.pii_redaction === 'true');
@@ -125,6 +134,7 @@ export default function Settings({ setActiveTab }) {
         return;
       }
       if (cleanKey && !cleanKey.includes('••••')) {
+        localStorage.setItem('nebius_user_api_key', cleanKey);
         await saveSetting('nebius_api_key', cleanKey);
       }
       const res = await fetch(`${API_BASE_URL}/settings/status`);
@@ -306,6 +316,7 @@ rules:
                       setApiKey(cleanKey);
                     }
                     if (cleanKey && !cleanKey.includes('••••') && !cleanKey.startsWith('sk_live_')) {
+                      localStorage.setItem('nebius_user_api_key', cleanKey);
                       saveSetting('nebius_api_key', cleanKey);
                     }
                   }}
