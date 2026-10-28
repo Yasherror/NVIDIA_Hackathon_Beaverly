@@ -7,7 +7,7 @@ import './Settings.css';
 import { API_BASE_URL } from '../api/apiClient';
 
 export default function Settings({ setActiveTab }) {
-  const [apiKey, setApiKey] = useState('sk_live_nebius_token_09871234');
+  const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [testStatus, setTestStatus] = useState('idle'); // 'idle' | 'testing' | 'success'
 
@@ -42,6 +42,7 @@ export default function Settings({ setActiveTab }) {
       .then(res => res.json())
       .then(data => {
         if (data.nebius_api_key_masked) setApiKey(data.nebius_api_key_masked);
+        else setApiKey('');
         if (data.read_isolation !== undefined) setReadIso(data.read_isolation === 'true');
         if (data.network_isolation !== undefined) setNetworkIso(data.network_isolation === 'true');
         if (data.pii_redaction !== undefined) setPiiRedact(data.pii_redaction === 'true');
@@ -85,6 +86,13 @@ export default function Settings({ setActiveTab }) {
     showToast(`Client PII Anonymization: ${next ? 'Enforced' : 'Disabled'}`);
   };
 
+  const handleRoutingChange = (tier, val) => {
+    const nextRouting = { ...routing, [tier]: val };
+    setRouting(nextRouting);
+    saveSetting('model_routing', JSON.stringify(nextRouting));
+    showToast(`Model tier updated: ${tier} → ${val}`);
+  };
+
   const scrollToSection = (id) => {
     const el = document.getElementById(id);
     if (el) {
@@ -95,7 +103,27 @@ export default function Settings({ setActiveTab }) {
   const handleTestConnection = async () => {
     setTestStatus('testing');
     try {
-      const cleanKey = (apiKey || '').trim();
+      let cleanKey = (apiKey || '').trim();
+      const match = cleanKey.match(/(v1\.[A-Za-z0-9_\-\.]+)/);
+      if (match) {
+        cleanKey = match[1].replace(/\.+$/, '');
+        setApiKey(cleanKey);
+      }
+      if (!cleanKey) {
+        setTestStatus('idle');
+        showToast('Please paste your Nebius API key first.');
+        return;
+      }
+      if (cleanKey.startsWith('sk_live_') || cleanKey === 'your_nebius_api_key_here') {
+        setTestStatus('idle');
+        showToast('Please enter a valid Nebius Token Factory API key starting with v1.');
+        return;
+      }
+      if (cleanKey.startsWith('v1.') && cleanKey.length < 180) {
+        setTestStatus('idle');
+        showToast('Incomplete API key detected (truncated). Please copy the entire 220+ character line from .env.');
+        return;
+      }
       if (cleanKey && !cleanKey.includes('••••')) {
         await saveSetting('nebius_api_key', cleanKey);
       }
@@ -268,8 +296,19 @@ rules:
                   type={showKey ? "text" : "password"} 
                   className="api-input" 
                   value={apiKey}
+                  placeholder="Paste your Nebius Token Factory API key (v1.Cm...)"
                   onChange={(e) => setApiKey(e.target.value)}
-                  onBlur={() => { if (apiKey && !apiKey.includes('••••')) saveSetting('nebius_api_key', apiKey); }}
+                  onBlur={() => {
+                    let cleanKey = (apiKey || '').trim();
+                    const match = cleanKey.match(/(v1\.[A-Za-z0-9_\-\.]+)/);
+                    if (match) {
+                      cleanKey = match[1].replace(/\.+$/, '');
+                      setApiKey(cleanKey);
+                    }
+                    if (cleanKey && !cleanKey.includes('••••') && !cleanKey.startsWith('sk_live_')) {
+                      saveSetting('nebius_api_key', cleanKey);
+                    }
+                  }}
                 />
                 <button className="eye-btn" onClick={() => setShowKey(!showKey)}>
                   {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -334,7 +373,7 @@ rules:
                 <select 
                   className="routing-select"
                   value={routing.skillDetection}
-                  onChange={(e) => setRouting({...routing, skillDetection: e.target.value})}
+                  onChange={(e) => handleRoutingChange('skillDetection', e.target.value)}
                 >
                   <option>Nemotron Nano</option>
                   <option>Nemotron Super</option>
@@ -353,7 +392,7 @@ rules:
                 <select 
                   className="routing-select"
                   value={routing.scopeCheck}
-                  onChange={(e) => setRouting({...routing, scopeCheck: e.target.value})}
+                  onChange={(e) => handleRoutingChange('scopeCheck', e.target.value)}
                 >
                   <option>Nemotron Nano</option>
                   <option>Nemotron Super</option>
@@ -373,7 +412,7 @@ rules:
                 <select 
                   className="routing-select"
                   value={routing.drafting}
-                  onChange={(e) => setRouting({...routing, drafting: e.target.value})}
+                  onChange={(e) => handleRoutingChange('drafting', e.target.value)}
                 >
                   <option>Nemotron Super</option>
                   <option>Nemotron Nano</option>
@@ -393,7 +432,7 @@ rules:
                 <select 
                   className="routing-select"
                   value={routing.verification}
-                  onChange={(e) => setRouting({...routing, verification: e.target.value})}
+                  onChange={(e) => handleRoutingChange('verification', e.target.value)}
                 >
                   <option>Nemotron Super</option>
                   <option>Nemotron Nano</option>
@@ -412,7 +451,7 @@ rules:
                 <select 
                   className="routing-select"
                   value={routing.fallback}
-                  onChange={(e) => setRouting({...routing, fallback: e.target.value})}
+                  onChange={(e) => handleRoutingChange('fallback', e.target.value)}
                 >
                   <option>Nemotron Ultra</option>
                   <option>Nemotron Super</option>
@@ -530,7 +569,7 @@ rules:
 
           <div className="storage-overview-box">
             <div className="storage-path-badge">
-              Path: /Users/chen/Beaverly/data/
+              Path: ./backend/db/ (SQLite: beaverly.db, LanceDB: lancedb/)
             </div>
             <div className="storage-bar-outer">
               <div className="storage-bar-inner"></div>
@@ -607,7 +646,7 @@ rules:
           </div>
 
           <div className="about-blueprint-box">
-            <div><b>Core Architecture:</b> OpenShell Container Isolation + Hermes Agent Dynamic Skill Acquisition + NVIDIA Nemotron-70B Inference Engine.</div>
+            <div><b>Core Architecture:</b> OpenShell Container Isolation + Hermes Agent Dynamic Skill Acquisition + NVIDIA Nemotron Inference Engine (Nano 30B / Super 120B / Ultra 550B).</div>
             <div className="about-tech-stack-row">
               <span className="tech-tag">Nebius Token Factory</span>
               <span className="tech-tag">NemoClaw Blueprint</span>
@@ -618,7 +657,7 @@ rules:
           </div>
 
           <div className="about-footer-links">
-            <span className="about-link-item" onClick={() => window.open('https://github.com', '_blank')}>
+            <span className="about-link-item" onClick={() => window.open('https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly', '_blank')}>
               GitHub Repository <ExternalLink size={14} />
             </span>
             <span className="about-link-item" onClick={() => window.open('https://docs.nebius.ai', '_blank')}>

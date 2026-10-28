@@ -29,6 +29,20 @@ class Settings(BaseSettings):
     uploads_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
     sandboxes_path: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sandboxes")
 
+    @field_validator("nebius_api_key", mode="after")
+    @classmethod
+    def clean_api_key(cls, v: str) -> str:
+        if not v:
+            return ""
+        import re
+        m = re.search(r'(v1\.[A-Za-z0-9_\-\.]+)', v)
+        if m:
+            return m.group(1).rstrip('.')
+        cleaned = v.strip().strip('"').strip("'")
+        if cleaned.startswith("NEBIUS_API_KEY="):
+            cleaned = cleaned.split("=", 1)[1].strip().strip('"').strip("'")
+        return cleaned.split()[0] if cleaned else ""
+
     @field_validator("db_path", "lancedb_path", "uploads_path", "sandboxes_path", mode="after")
     @classmethod
     def resolve_relative_paths(cls, v: str) -> str:

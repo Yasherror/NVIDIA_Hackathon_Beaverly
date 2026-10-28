@@ -165,11 +165,16 @@ async def init_db():
         async with db.execute("SELECT value FROM app_settings WHERE key='nebius_api_key'") as cur:
             row = await cur.fetchone()
             if row and row[0]:
-                saved_key = str(row[0]).strip()
-                if saved_key and not saved_key.startswith("••"):
+                raw_key = str(row[0]).strip()
+                import re
+                m = re.search(r'(v1\.[A-Za-z0-9_\-\.]+)', raw_key)
+                cleaned_key = m.group(1).rstrip('.') if m else raw_key
+                if cleaned_key != raw_key:
+                    await db.execute("UPDATE app_settings SET value=? WHERE key='nebius_api_key'", (cleaned_key,))
+                if cleaned_key and not cleaned_key.startswith("••") and not cleaned_key.startswith("sk_live_") and cleaned_key != "your_nebius_api_key_here":
                     from config import settings
                     if not settings.nebius_api_key or settings.nebius_api_key in ("your_nebius_api_key_here", ""):
-                        settings.nebius_api_key = saved_key
+                        settings.nebius_api_key = cleaned_key
                         logger.info("Restored persisted Nebius API key from SQLite.")
 
         await db.commit()
