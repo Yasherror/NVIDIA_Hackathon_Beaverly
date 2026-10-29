@@ -18,6 +18,7 @@ class CaseCreate(BaseModel):
 
 from memory.lancedb_store import purge_case_table
 
+@router.get("")
 @router.get("/")
 async def list_cases():
     async with aiosqlite.connect(settings.db_path) as db:

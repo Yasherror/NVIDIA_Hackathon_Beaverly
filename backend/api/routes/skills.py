@@ -28,6 +28,7 @@ class SkillUpdate(BaseModel):
     description: Optional[str] = None
     change_reason: Optional[str] = "Manual refinement by lawyer"
 
+@router.get("")
 @router.get("/")
 async def list_skills(scope: str = None, case_id: str = None):
     query = """
