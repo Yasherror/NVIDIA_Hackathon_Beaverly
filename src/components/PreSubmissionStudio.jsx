@@ -169,13 +169,14 @@ export default function PreSubmissionStudio({
     }
   };
 
-  // Run initial audit on open or when initialDraft is provided
+  // Auto-debounce re-audit when user edits draft text or changes ground truth filter
   useEffect(() => {
-    if (isOpen) {
-      const activeText = (initialDraft && initialDraft.trim().length > 0) ? initialDraft : draftText;
-      runAudit(activeText, selectedDocFilter);
-    }
-  }, [isOpen, initialDraft]);
+    if (!isOpen || !draftText.trim()) return;
+    const timer = setTimeout(() => {
+      runAudit(draftText, selectedDocFilter);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [isOpen, draftText, selectedDocFilter]);
 
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
