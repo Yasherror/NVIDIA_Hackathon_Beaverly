@@ -149,10 +149,10 @@ export default function PreSubmissionStudio({
         docFilter: docFilter
       });
 
-      // Mark which mismatches are currently present in draft text
+      // Fresh audit findings from backend are always active discrepancies until fixed
       const initialFindings = (res.mismatches || []).map(m => ({
         ...m,
-        resolved: !textToAudit.toLowerCase().includes(m.draft_value.toLowerCase())
+        resolved: false
       }));
       setFindings(initialFindings);
     } catch (err) {
@@ -234,7 +234,14 @@ export default function PreSubmissionStudio({
 
     // Replace first matching case-insensitive occurrence or exact string
     const regex = new RegExp(mismatch.draft_value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    const updatedDraft = draftText.replace(regex, mismatch.correct_value);
+    let updatedDraft = draftText.replace(regex, mismatch.correct_value);
+    if (updatedDraft === draftText && mismatch.draft_value.length > 3) {
+      const words = mismatch.draft_value.split(/\s+/).filter(w => w.length > 2);
+      if (words.length > 0) {
+        const wordRegex = new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'), 'i');
+        updatedDraft = draftText.replace(wordRegex, mismatch.correct_value);
+      }
+    }
     setDraftText(updatedDraft);
 
     // Update resolved status in findings
@@ -481,7 +488,7 @@ export default function PreSubmissionStudio({
                     <span>Legal Reasoner: NVIDIA Nemotron Super • Client Matter Vault</span>
                   </div>
                 </div>
-              ) : findings.length === 0 || unresolvedCount === 0 ? (
+              ) : findings.length === 0 ? (
                 <div className="studio-clean-card">
                   <CheckCircle2 size={44} color="var(--success-dot)" />
                   <div className="studio-clean-title">All Draft Facts Corroborated</div>
@@ -490,7 +497,14 @@ export default function PreSubmissionStudio({
                   </div>
                 </div>
               ) : (
-                findings.map((item) => (
+                <>
+                  {unresolvedCount === 0 && (
+                    <div style={{ padding: '10px 14px', background: '#eafaf1', border: '1px solid #a3e4d7', borderRadius: '8px', color: '#1e8449', fontWeight: 700, fontSize: '0.86rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <CheckCircle2 size={16} />
+                      <span>All discrepancies in this draft have been resolved and aligned with matter records!</span>
+                    </div>
+                  )}
+                  {findings.map((item) => (
                   <div 
                     key={item.id} 
                     className={`studio-finding-card ${item.resolved ? 'resolved' : item.severity === 'CRITICAL' ? 'critical' : 'warning'}`}
@@ -541,7 +555,8 @@ export default function PreSubmissionStudio({
                       </button>
                     )}
                   </div>
-                ))
+                ))}
+                </>
               )}
             </div>
           </div>
