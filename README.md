@@ -12,7 +12,7 @@
 [![Security](https://img.shields.io/badge/Security-NVIDIA_OpenShell_Sandbox-1E40AF.svg)](https://github.com/NVIDIA/OpenShell)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-[Live Demo](#-live-demo--testing-instructions) • [Key Features](#-core-features) • [Nebius & NVIDIA Usage](#-nebius-token-factory--nvidia-nemotron-usage) • [Setup & Deployment](#-setup--running-instructions) • [Feedback](#-feedback-on-nebius--nvidia-technologies)
+[Testing Instructions](#-testing-instructions) • [Key Features](#-core-features) • [Nebius & NVIDIA Usage](#-nebius-token-factory--nvidia-nemotron-usage) • [Setup & Deployment](#-setup--running-instructions) • [Feedback](#-feedback-on-nebius--nvidia-technologies)
 
 </div>
 
@@ -96,12 +96,13 @@ Beaverly automatically seeds **3 Active Matters** from the **Atticus Project CUA
 
 ---
 
+<a id="-testing-instructions"></a>
 <a id="-live-demo--testing-instructions"></a>
-<a id="live-demo"></a>
-## 🌐 Live Demo & Testing Instructions
+<a id="testing-instructions"></a>
+## 🧪 Testing Instructions
 
 - **Public Code Repository**: [https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly](https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly)
-- **Hosted Application (Live Web Demo)**: [https://beaverly-legal-ai.onrender.com](https://beaverly-legal-ai.onrender.com)
+- **Hosted Application**: Accessible via the official **Devpost Submission Link** (or run locally via Docker / start scripts below)
 - **Open Source License**: [Apache License 2.0](LICENSE)
 
 ### 🔑 How to Get a Nebius Token Factory API Key:
@@ -110,7 +111,7 @@ Beaverly automatically seeds **3 Active Matters** from the **Atticus Project CUA
 3. Click **Create Key**, copy your secret key (starts with `v1.Cm...`), and paste it into Beaverly Settings.
 
 ### 🧪 Step-by-Step Testing Guide (Bring Your Own Key - BYOK):
-1. Open the live hosted application: [https://beaverly-legal-ai.onrender.com](https://beaverly-legal-ai.onrender.com).
+1. Open the hosted application via the Devpost submission portal (or your local instance at `http://localhost:8000`).
 2. Click **Settings** (⚙️ gear icon in the sidebar).
 3. Paste your **Nebius Token Factory API Key** and click **Save & Test Connection** (status turns green: `Connected`).
 4. In **Conversations**, select **Bellicum Pharma** or **BorrowMoney.com** and ask: *"Summarize the notice provisions in our agreement."*
