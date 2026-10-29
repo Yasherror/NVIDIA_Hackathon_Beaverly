@@ -169,14 +169,13 @@ export default function PreSubmissionStudio({
     }
   };
 
-  // Auto-debounce re-audit when user edits draft text or changes ground truth filter
+  // Run audit only once when the modal is opened. Edits in draft remain manual until user clicks 'Verify Draft Facts'.
   useEffect(() => {
-    if (!isOpen || !draftText.trim()) return;
-    const timer = setTimeout(() => {
-      runAudit(draftText, selectedDocFilter);
-    }, 700);
-    return () => clearTimeout(timer);
-  }, [isOpen, draftText, selectedDocFilter]);
+    if (isOpen) {
+      const textToUse = (initialDraft && initialDraft.trim().length > 0) ? initialDraft : draftText;
+      runAudit(textToUse, selectedDocFilter);
+    }
+  }, [isOpen]);
 
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
