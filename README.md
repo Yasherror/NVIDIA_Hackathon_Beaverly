@@ -12,7 +12,7 @@
 [![Security](https://img.shields.io/badge/Security-NVIDIA_OpenShell_Sandbox-1E40AF.svg)](https://github.com/NVIDIA/OpenShell)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-[Live Demo](#-live-demo--testing-instructions) • [Key Features](#-core-features) • [Nebius & NVIDIA Usage](#-nebius-token-factory--nvidia-nemotron-usage) • [Setup & Deployment](#-setup--running-instructions) • [Demo Video](#-demonstration-video) • [Feedback](#-feedback-on-nebius--nvidia-technologies)
+[Live Demo](#-live-demo--testing-instructions) • [Key Features](#-core-features) • [Nebius & NVIDIA Usage](#-nebius-token-factory--nvidia-nemotron-usage) • [Setup & Deployment](#-setup--running-instructions) • [Feedback](#-feedback-on-nebius--nvidia-technologies)
 
 </div>
 
@@ -159,18 +159,6 @@ npm run dev
 
 ---
 
-<a id="-demonstration-video"></a>
-<a id="demo-video"></a>
-## 🎥 Demonstration Video
-
-- **Walkthrough Video**: [Watch Beaverly Demo on YouTube](https://youtu.be/YOUR_VIDEO_ID) *(Duration: < 3 minutes)*
-- **Key Modules Highlighted**:
-  1. **Persistent Memory & Habit Formation**: Barry learns lawyer drafting rules on the fly with immutable Git-style versioning and rollback.
-  2. **OpenShell Ethical Wall**: Active kernel sandbox boundary enforcement preventing cross-matter leakage between opposing corporate clients.
-  3. **Pre-Submission Fact Verification Studio**: Deep cross-examination of drafts against executed matter contracts with 1-click legal correction.
-  4. **Zero-Leak Client Data Destruction**: Automated physical vector shredding and cryptographic destruction certificate upon case closure.
-
----
 
 <a id="-feedback-on-nebius--nvidia-technologies"></a>
 <a id="feedback"></a>
