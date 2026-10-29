@@ -101,13 +101,18 @@ Beaverly automatically seeds **3 Active Matters** from the **Atticus Project CUA
 ## 🌐 Live Demo & Testing Instructions
 
 - **Public Code Repository**: [https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly](https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly)
-- **Hosted Application (Live URL)**: [https://beaverly.onrender.com](https://beaverly.onrender.com) *(Or your deployed Render URL)*
+- **Hosted Application (Live Web Demo)**: [https://beaverly-legal-ai.onrender.com](https://beaverly-legal-ai.onrender.com)
 - **Open Source License**: [Apache License 2.0](LICENSE)
 
-### How to Test (Bring Your Own Key - BYOK):
-1. Open the hosted web application URL above.
-2. Go to **Settings** (gear icon in the sidebar).
-3. Paste your **Nebius Token Factory API Key** (`v1.Cm...`) and click **Save & Test Connection** (status turns green: `Connected`).
+### 🔑 How to Get a Nebius Token Factory API Key:
+1. Sign in or create a free account at [Nebius Token Factory](https://nebius.com/token-factory).
+2. Click **API Keys** in the left navigation sidebar.
+3. Click **Create Key**, copy your secret key (starts with `v1.Cm...`), and paste it into Beaverly Settings.
+
+### 🧪 Step-by-Step Testing Guide (Bring Your Own Key - BYOK):
+1. Open the live hosted application: [https://beaverly-legal-ai.onrender.com](https://beaverly-legal-ai.onrender.com).
+2. Click **Settings** (⚙️ gear icon in the sidebar).
+3. Paste your **Nebius Token Factory API Key** and click **Save & Test Connection** (status turns green: `Connected`).
 4. In **Conversations**, select **Bellicum Pharma** or **BorrowMoney.com** and ask: *"Summarize the notice provisions in our agreement."*
 5. Click **Audit in Studio** on Barry's response (or click the shield icon in the header) to open the **Pre-Submission Fact Verification Studio**.
 6. In the Studio, try altering facts (e.g. changing counterparty to *Novartis* or the effective date to *2026*), then click **Verify Draft Facts** (or press `Ctrl+Enter`). Notice the red discrepancy badges and click **Apply Correction to Draft** for 1-click patching.
