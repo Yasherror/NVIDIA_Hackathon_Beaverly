@@ -5,15 +5,24 @@ echo "======================================="
 echo "Starting Beaverly: Local-First AI Assistant"
 echo "======================================="
 
-# 1. Start FastAPI Backend in background
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 1. Install frontend dependencies if not installed
+if [ ! -d "$ROOT_DIR/node_modules" ]; then
+    echo "Installing frontend dependencies..."
+    cd "$ROOT_DIR"
+    npm install
+fi
+
+# 2. Start FastAPI Backend in background
 echo "1. Starting FastAPI Backend on port 8000..."
-cd "$(dirname "$0")/backend"
+cd "$ROOT_DIR/backend"
 python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
-cd ..
 
-# 2. Start React Frontend
+# 3. Start React Frontend
 echo "2. Starting React Frontend on port 5173..."
+cd "$ROOT_DIR"
 npm run dev &
 FRONTEND_PID=$!
 
@@ -26,4 +35,3 @@ echo "======================================="
 
 trap "kill $BACKEND_PID $FRONTEND_PID 2>/dev/null" EXIT
 wait
-

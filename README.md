@@ -143,6 +143,7 @@ Open [http://localhost:8000](http://localhost:8000).
 ```bash
 git clone https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly.git
 cd NVIDIA_Hackathon_Beaverly
+pip install -r backend/requirements.txt
 chmod +x start.sh
 ./start.sh
 ```
@@ -150,15 +151,18 @@ chmod +x start.sh
 ---
 
 ### 3. Windows Local Development
-Double-click `start.bat` in the project root, or run:
+Double-click `start.bat` in the project root (automatically installs frontend dependencies and launches both servers), or run manually:
 ```powershell
-# Backend (FastAPI on Port 8000)
+# 1. Install Dependencies
+pip install -r backend/requirements.txt
+npm install
+
+# 2. Run Backend (FastAPI on Port 8000)
 cd backend
 python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-# Frontend (Vite on Port 5173)
+# 3. Run Frontend (Vite on Port 5173, in a separate terminal)
 cd ..
-npm install
 npm run dev
 ```
 
