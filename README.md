@@ -12,12 +12,19 @@
 [![Security](https://img.shields.io/badge/Security-NVIDIA_OpenShell_Sandbox-1E40AF.svg)](https://github.com/NVIDIA/OpenShell)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-[Live Demo](#-live-demo--testing-instructions) • [Key Features](#-core-features) • [Nebius & NVIDIA Usage](#-nebius-token-factory--nvidia-nemotron-usage) • [Setup & Deployment](#-setup--running-instructions) • [Feedback](#-feedback-on-nebius--nvidia-technologies)
+[Live Demo](#-live-demo--testing-instructions) • [Key Features](#-core-features) • [Nebius & NVIDIA Usage](#-nebius-token-factory--nvidia-nemotron-usage) • [Setup & Deployment](#-setup--running-instructions) • [Demo Video](#-demonstration-video) • [Feedback](#-feedback-on-nebius--nvidia-technologies)
 
 </div>
 
 ---
 
+> **🏆 Hackathon Track Identification**: Submitted to the **Personal AI Track** of the **Nebius x NVIDIA Global AI Hackathon** (*"Build an always-on, private assistant that works for you while keeping your data under your control. Give it persistent memory, reusable skills, access to the tools and information you choose, and the ability to carry out tasks across your daily workflows."*).
+> 
+> **🌱 Project Status**: This project was newly created by the entrant during the Hackathon Submission Period.
+
+---
+
+<a id="project-overview"></a>
 ## 📌 Project Overview
 
 **Beaverly** is a private, client-confidential legal AI copilot engineered specifically for solo practitioners and boutique law firms, submitted to the **Personal AI Track** of the **Nebius x NVIDIA Global AI Hackathon**.
@@ -29,6 +36,8 @@
 
 ---
 
+<a id="-core-features"></a>
+<a id="core-features"></a>
 ## ⚖️ Core Features
 
 ### 1. Persistent Lawyer Memory & Skills Playbook
@@ -45,8 +54,8 @@
 
 ### 3. Pre-Submission Verification Studio
 - Line-by-line verification comparing working drafts against executed contract records in the matter vault.
-- Automatically flags factual discrepancies (e.g., draft states **21 March 2025** while executed agreement stipulates **12 March 2025**) in red with source clause citations.
-- Includes interactive side-by-side editing, 1-click correction acceptance, and instant verified PDF export.
+- Automatically flags factual discrepancies (e.g., draft states **March 27, 2026** while executed agreement stipulates **March 27, 2019**, or corporate entity misnomers like *Belicum* vs *Bellicum*) in red with source clause citations.
+- Includes interactive side-by-side editing, 1-click correction acceptance (with smart corporate suffix deduplication), and instant verified PDF export.
 
 ### 4. Zero-Leak Memory Destruction upon Matter Closure
 - When a matter concludes, counsel clicks **Close Matter & Shred Client Data**.
@@ -59,6 +68,8 @@
 
 ---
 
+<a id="-nebius-token-factory--nvidia-nemotron-usage"></a>
+<a id="nebius-usage"></a>
 ## 🧠 Nebius Token Factory & NVIDIA Nemotron Usage
 
 Beaverly routes tasks through **Nebius Token Factory** using a multi-tiered model matrix:
@@ -66,50 +77,58 @@ Beaverly routes tasks through **Nebius Token Factory** using a multi-tiered mode
 | Task | Model | Why This Model? |
 | :--- | :--- | :--- |
 | **Skill Detection & Scope Check** | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Ultra-low latency (<300ms) for fast intent classification and entity scope detection without burning credits. |
-| **Legal Clause Drafting & Review** | `nvidia/nemotron-3-super-120b-a12b` | Superior legal vocabulary coherence, balanced throughput, and precision in indemnity drafting. |
+| **Legal Clause Drafting & Review** | `nvidia/nemotron-3-super-120b-a12b` | Superior legal vocabulary coherence, balanced throughput, and precision in contract fact-checking and indemnity drafting. |
 | **Multi-Hop Statutory Edge Cases** | `nvidia/Nemotron-3-Ultra-550b-a55b` | Deep reasoning for resolving conflicting cross-jurisdictional choice-of-law clauses and liability caps. |
 | **Agentic Workflow Coordination** | `NousResearch/Hermes-4-405B` | Multi-step reasoning and function orchestration across the OpenShell runtime. |
 | **Evidentiary Clause Embeddings** | `Qwen/Qwen3-Embedding-8B` | 4096-dimensional dense vector embeddings accelerated via Nebius parallel batch endpoints for LanceDB RAG. |
 
 ---
 
+<a id="benchmark-matters"></a>
 ## 📚 Pre-Loaded Benchmark Matters (CUAD Dataset)
 
 Beaverly automatically seeds **3 Active Matters** from the **Atticus Project CUAD v1 Dataset** (CC BY 4.0, SEC EDGAR public filings) plus **1 Closed Demonstration Matter**:
 
 1. **Accuray Inc. v. Siemens Aktiengesellschaft** (`MATTER-2026-2CA3BD`): Medical Tech Distributor Agreement (Exhibit 10.31).
-2. **Bellicum Pharmaceuticals v. Miltenyi Biotec** (`MATTER-2026-891A4F`): Master Commercial Manufacturing & Exclusive Supply Agreement.
+2. **Bellicum Pharmaceuticals v. Miltenyi Biotec** (`MATTER-2026-5AA880`): Master Commercial Manufacturing & Exclusive Supply Agreement.
 3. **BorrowMoney.com, Inc. v. Vaccines2Go** (`MATTER-2026-1298ED`): Joint Venture Operating Agreement & Healthcare IP Dispute.
-4. **Acme v. Beta Dispute** (`MATTER-2026-CLOSED`): Pre-shredded archived case demonstrating Zero-Leak destruction and audit verification.
+4. **Acme v. Beta Dispute** (`MATTER-2026-0B2736`): Pre-shredded archived case demonstrating Zero-Leak destruction and audit verification.
 
 ---
 
+<a id="-live-demo--testing-instructions"></a>
+<a id="live-demo"></a>
 ## 🌐 Live Demo & Testing Instructions
 
 - **Public Code Repository**: [https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly](https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly)
+- **Hosted Application (Live URL)**: [https://beaverly.onrender.com](https://beaverly.onrender.com) *(Or your deployed Render URL)*
 - **Open Source License**: [Apache License 2.0](LICENSE)
 
 ### How to Test (Bring Your Own Key - BYOK):
-1. Open the hosted web application.
+1. Open the hosted web application URL above.
 2. Go to **Settings** (gear icon in the sidebar).
-3. Paste your **Nebius Token Factory API Key** (`v1.Cm...`) and click **Test Connection** (turns green: `Connected`).
-4. In **Conversations**, select **BorrowMoney.com** and ask: *"Summarize the notice provisions in our JV agreement."*
-5. Click **Export PDF** on Barry's response to download the formal letter.
-6. Test security by asking: *"Barry, access `/sandboxes/accuray/confidential_case_records.pdf`"*. Observe the in-chat block and check **Protection Record** for the `BLOCK` audit entry.
-7. To safely remove your credentials, click the red **Clear Key** button in Settings.
+3. Paste your **Nebius Token Factory API Key** (`v1.Cm...`) and click **Save & Test Connection** (status turns green: `Connected`).
+4. In **Conversations**, select **Bellicum Pharma** or **BorrowMoney.com** and ask: *"Summarize the notice provisions in our agreement."*
+5. Click **Audit in Studio** on Barry's response (or click the shield icon in the header) to open the **Pre-Submission Fact Verification Studio**.
+6. In the Studio, try altering facts (e.g. changing counterparty to *Novartis* or the effective date to *2026*), then click **Verify Draft Facts** (or press `Ctrl+Enter`). Notice the red discrepancy badges and click **Apply Correction to Draft** for 1-click patching.
+7. Click **Export Verified PDF** to download the formal compliance letter.
+8. Test security boundary enforcement by asking Barry: *"Barry, read files from other case: `/sandboxes/case-6598b8c0/confidential_case_records.pdf`"*. Observe the instant OpenShell kernel block and check **Protection Record** for the `DENY` audit entry.
+9. To safely remove your credentials at any time, click **Clear Key** in Settings.
 
 ---
 
+<a id="-setup--running-instructions"></a>
+<a id="setup-instructions"></a>
 ## 🛠️ Setup & Running Instructions
 
 ### 1. Docker (Recommended — Unified Single-Port 8000)
-Runs the React frontend, FastAPI backend, SQLite, and LanceDB inside one container:
+Runs the React frontend, FastAPI backend, SQLite, and LanceDB inside one unified container:
 
 ```bash
 git clone https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly.git
 cd NVIDIA_Hackathon_Beaverly
 docker build -t beaverly .
-docker run -p 8000:8000 beaverly
+docker run -p 8000:8000 -e NEBIUS_API_KEY=your_key_here beaverly
 ```
 Open [http://localhost:8000](http://localhost:8000).
 
@@ -128,17 +147,33 @@ chmod +x start.sh
 ### 3. Windows Local Development
 Double-click `start.bat` in the project root, or run:
 ```powershell
-# Backend
+# Backend (FastAPI on Port 8000)
 cd backend
 python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-# Frontend
+# Frontend (Vite on Port 5173)
+cd ..
 npm install
 npm run dev
 ```
 
 ---
 
+<a id="-demonstration-video"></a>
+<a id="demo-video"></a>
+## 🎥 Demonstration Video
+
+- **Walkthrough Video**: [Watch Beaverly Demo on YouTube](https://youtu.be/YOUR_VIDEO_ID) *(Duration: < 3 minutes)*
+- **Key Modules Highlighted**:
+  1. **Persistent Memory & Habit Formation**: Barry learns lawyer drafting rules on the fly with immutable Git-style versioning and rollback.
+  2. **OpenShell Ethical Wall**: Active kernel sandbox boundary enforcement preventing cross-matter leakage between opposing corporate clients.
+  3. **Pre-Submission Fact Verification Studio**: Deep cross-examination of drafts against executed matter contracts with 1-click legal correction.
+  4. **Zero-Leak Client Data Destruction**: Automated physical vector shredding and cryptographic destruction certificate upon case closure.
+
+---
+
+<a id="-feedback-on-nebius--nvidia-technologies"></a>
+<a id="feedback"></a>
 ## 💬 Feedback on Nebius & NVIDIA Technologies
 
 *Submitted directly for the Nebius Token Factory and NVIDIA Developer Teams:*
@@ -149,7 +184,9 @@ npm run dev
 
 ---
 
+<a id="license"></a>
 ## ⚖️ Project Submission & License
 
-- **Track**: **Personal AI Track**
-- **License**: [Apache License 2.0](LICENSE)
+- **Hackathon Track**: **Personal AI Track**
+- **Open Source License**: [Apache License 2.0](LICENSE) (Visible and detectable in the repository root)
+- **Repository**: [https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly](https://github.com/Yasherror/NVIDIA_Hackathon_Beaverly)
