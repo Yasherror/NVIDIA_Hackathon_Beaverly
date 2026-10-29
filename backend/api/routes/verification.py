@@ -132,19 +132,21 @@ def check_factual_contradictions(case_id: str, draft: str) -> list[dict]:
 
     # Matter: Bellicum Pharma (case-f1c8b3f2)
     if "case-f1c8b3f2" in (case_id or "") or "bellicum" in draft_lower or "miltenyi" in draft_lower:
-        # Check Effective Date (March 27, 2019 vs any 2024-2029 date)
-        if ("2026" in draft or "2025" in draft or "2024" in draft or "2027" in draft or "2028" in draft) and ("march 27" in draft_lower or "effective" in draft_lower):
-            bad_year = "2026" if "2026" in draft else ("2025" if "2025" in draft else "2024")
-            mismatches.append({
-                "id": "mismatch-bellicum-date",
-                "type": "Date Mismatch",
-                "severity": "CRITICAL",
-                "draft_value": f"March 27, {bad_year}" if f"March 27, {bad_year}" in draft else bad_year,
-                "correct_value": "March 27, 2019",
-                "source_doc": "Miltenyi_Bellicum_Supply_Agreement.txt, §1.1 (Effective Date)",
-                "explanation": f"Draft claims agreement effective date is in {bad_year}, but the executed Master Supply Agreement in the matter vault establishes an Effective Date of March 27, 2019.",
-                "recommendation": "Correct effective date to March 27, 2019 to reflect the binding executed master agreement."
-            })
+        # Check Effective Date: accurately extract the year immediately associated with March 27
+        m_date = re.search(r'march\s+27,?\s*(\d{4})', draft, re.IGNORECASE)
+        if m_date:
+            draft_year = m_date.group(1)
+            if draft_year != "2019":
+                mismatches.append({
+                    "id": "mismatch-bellicum-date",
+                    "type": "Date Mismatch",
+                    "severity": "CRITICAL",
+                    "draft_value": f"March 27, {draft_year}",
+                    "correct_value": "March 27, 2019",
+                    "source_doc": "Miltenyi_Bellicum_Supply_Agreement.txt, §1.1 (Effective Date)",
+                    "explanation": f"Draft claims agreement effective date is March 27, {draft_year}, but the executed Master Supply Agreement in the matter vault establishes an Effective Date of March 27, 2019.",
+                    "recommendation": "Correct effective date to March 27, 2019 to reflect the binding executed master agreement."
+                })
         if "pfizer" in draft_lower:
             mismatches.append({
                 "id": "mismatch-bellicum-entity",
@@ -170,17 +172,20 @@ def check_factual_contradictions(case_id: str, draft: str) -> list[dict]:
 
     # Matter: Accuray v. Siemens (case-6598b8c0)
     if "case-6598b8c0" in (case_id or "") or "accuray" in draft_lower or "siemens" in draft_lower:
-        if ("2026" in draft or "2025" in draft) and ("effective" in draft_lower or "june 12" in draft_lower):
-            mismatches.append({
-                "id": "mismatch-accuray-date",
-                "type": "Date Mismatch",
-                "severity": "CRITICAL",
-                "draft_value": "2026",
-                "correct_value": "June 12, 2015",
-                "source_doc": "Accuray_Siemens_Distributor_Agreement.txt, Preamble",
-                "explanation": "Draft specifies 2026, but executed distributor agreement was signed June 12, 2015.",
-                "recommendation": "Align contract reference date with June 12, 2015."
-            })
+        m_acc = re.search(r'june\s+12,?\s*(\d{4})', draft, re.IGNORECASE)
+        if m_acc:
+            acc_year = m_acc.group(1)
+            if acc_year != "2015":
+                mismatches.append({
+                    "id": "mismatch-accuray-date",
+                    "type": "Date Mismatch",
+                    "severity": "CRITICAL",
+                    "draft_value": f"June 12, {acc_year}",
+                    "correct_value": "June 12, 2015",
+                    "source_doc": "Accuray_Siemens_Distributor_Agreement.txt, Preamble",
+                    "explanation": f"Draft specifies June 12, {acc_year}, but executed distributor agreement was signed June 12, 2015.",
+                    "recommendation": "Align contract reference date with June 12, 2015."
+                })
 
     # Global preset demo checks
     if "21 march" in draft_lower:
