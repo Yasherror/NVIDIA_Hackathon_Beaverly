@@ -73,6 +73,9 @@ export default function PreSubmissionStudio({
   const [progressPercent, setProgressPercent] = useState(15);
   const [auditMeta, setAuditMeta] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [lastAuditedText, setLastAuditedText] = useState(initialDraft || DEFAULT_SAMPLE.draft_text);
+
+  const isDraftModified = draftText.trim() !== (lastAuditedText || '').trim();
 
   // Verification Source (Ground Truth Document Selection)
   const [caseDocs, setCaseDocs] = useState([]);
@@ -155,6 +158,7 @@ export default function PreSubmissionStudio({
         resolved: false
       }));
       setFindings(initialFindings);
+      setLastAuditedText(textToAudit);
     } catch (err) {
       console.error('Audit verification error:', err);
     } finally {
@@ -226,6 +230,7 @@ export default function PreSubmissionStudio({
   const handleSelectSample = (sample) => {
     setActiveSampleId(sample.id);
     setDraftText(sample.draft_text);
+    setLastAuditedText(sample.draft_text);
     runAudit(sample.draft_text, selectedDocFilter);
   };
 
@@ -243,6 +248,7 @@ export default function PreSubmissionStudio({
       }
     }
     setDraftText(updatedDraft);
+    setLastAuditedText(updatedDraft);
 
     // Update resolved status in findings
     setFindings(prev => prev.map(item => 
@@ -350,6 +356,7 @@ export default function PreSubmissionStudio({
             onClick={() => {
               setActiveSampleId('custom');
               setDraftText('');
+              setLastAuditedText('');
               setFindings([]);
             }}
           >
@@ -379,7 +386,13 @@ export default function PreSubmissionStudio({
                   setDraftText(e.target.value);
                   setActiveSampleId('custom');
                 }}
-                placeholder="Paste or edit legal draft here to audit against verified matter documents..."
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    runAudit(draftText, selectedDocFilter);
+                  }
+                }}
+                placeholder="Paste or edit legal draft here to audit against verified matter documents (Ctrl+Enter to verify)..."
               />
             </div>
 
@@ -394,10 +407,12 @@ export default function PreSubmissionStudio({
                   onClick={() => {
                     if (activeSampleId === 'custom' && initialDraft) {
                       setDraftText(initialDraft);
+                      setLastAuditedText(initialDraft);
                       runAudit(initialDraft, selectedDocFilter);
                     } else {
                       const sample = samples.find(s => s.id === activeSampleId) || DEFAULT_SAMPLE;
                       setDraftText(sample.draft_text);
+                      setLastAuditedText(sample.draft_text);
                       runAudit(sample.draft_text, selectedDocFilter);
                     }
                   }}
@@ -424,8 +439,20 @@ export default function PreSubmissionStudio({
                 <AlertCircle size={16} color="var(--brand-primary)" />
                 <span>Fact Contradictions & Discrepancies</span>
               </div>
-              <div className="studio-pane-meta">
-                {unresolvedCount > 0 ? (
+              <div className="studio-pane-meta" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isDraftModified ? (
+                  <span style={{ 
+                    background: '#FEF3C7', 
+                    color: '#92400E', 
+                    padding: '3px 9px', 
+                    borderRadius: '12px', 
+                    fontSize: '0.78rem', 
+                    fontWeight: 700, 
+                    border: '1px solid #FCD34D' 
+                  }}>
+                    ● Unverified Draft Edits
+                  </span>
+                ) : unresolvedCount > 0 ? (
                   <span style={{ color: criticalCount > 0 ? '#c0392b' : '#b9770e', fontWeight: 700 }}>
                     {unresolvedCount} Discrepanc{unresolvedCount === 1 ? 'y' : 'ies'} ({criticalCount} Critical)
                   </span>
@@ -438,6 +465,42 @@ export default function PreSubmissionStudio({
             </div>
 
             <div className="studio-audit-list">
+              {isDraftModified && !isAuditing && (
+                <div style={{
+                  background: '#FFFBEB',
+                  border: '1px solid #FCD34D',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#78350F' }}>
+                    <AlertTriangle size={16} color="#D97706" style={{ flexShrink: 0 }} />
+                    <span>
+                      Draft modified. Click <b>"Verify Draft Facts"</b> below (or press <b>Ctrl+Enter</b>) to verify.
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => runAudit(draftText, selectedDocFilter)}
+                    style={{
+                      background: 'var(--brand-primary)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '5px 12px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    Verify Now
+                  </button>
+                </div>
+              )}
               {isAuditing ? (
                 <div className="audit-pipeline-container">
                   <div className="pipeline-header">
@@ -605,6 +668,11 @@ export default function PreSubmissionStudio({
               className="btn-run-audit" 
               onClick={() => runAudit(draftText, selectedDocFilter)}
               disabled={isAuditing || !draftText.trim()}
+              style={isDraftModified ? {
+                boxShadow: '0 0 0 2px #d35400, 0 4px 14px rgba(211, 84, 0, 0.4)',
+                transform: 'scale(1.02)',
+                transition: 'all 0.2s ease'
+              } : {}}
             >
               {isAuditing ? (
                 <>
@@ -614,7 +682,7 @@ export default function PreSubmissionStudio({
               ) : (
                 <>
                   <ShieldCheck size={16} />
-                  <span>Verify Draft Facts</span>
+                  <span>{isDraftModified ? 'Verify Updated Draft' : 'Verify Draft Facts'}</span>
                 </>
               )}
             </button>
