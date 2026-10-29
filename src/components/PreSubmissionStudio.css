@@ -316,7 +316,7 @@
 .studio-draft-textarea {
   width: 100%;
   flex: 1;
-  min-height: 380px;
+  min-height: 200px;
   padding: 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
@@ -347,7 +347,7 @@
   line-height: 1.68;
   white-space: pre-wrap;
   flex: 1;
-  min-height: 380px;
+  min-height: 200px;
   overflow-y: auto;
 }
 
@@ -532,19 +532,27 @@
 .finding-token-draft {
   color: #c0392b;
   background-color: #fce4e4;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 4px;
   font-weight: 700;
   font-family: monospace;
+  font-size: 0.82rem;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .finding-token-record {
   color: #27ae60;
   background-color: #e8f8f0;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 4px;
   font-weight: 700;
   font-family: monospace;
+  font-size: 0.82rem;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .finding-citation {
@@ -832,3 +840,189 @@
   background-color: rgba(73, 29, 11, 0.04);
 }
 
+
+
+/* Dedicated Export PDF Button */
+.btn-export-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #FBF7F2;
+  border: 1px solid #E5D9CB;
+  border-radius: var(--radius-pill);
+  padding: 9px 18px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #4A3626;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.btn-export-pdf:hover:not(:disabled) {
+  background-color: #F3EAE0;
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  transform: translateY(-1px);
+}
+
+.btn-export-pdf:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Custom Slim Scrollbars for PC Monitors */
+.studio-draft-body::-webkit-scrollbar,
+.studio-audit-list::-webkit-scrollbar,
+.studio-preset-bar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.studio-draft-body::-webkit-scrollbar-track,
+.studio-audit-list::-webkit-scrollbar-track,
+.studio-preset-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.studio-draft-body::-webkit-scrollbar-thumb,
+.studio-audit-list::-webkit-scrollbar-thumb,
+.studio-preset-bar::-webkit-scrollbar-thumb {
+  background: #E5D9CB;
+  border-radius: 4px;
+}
+
+.studio-draft-body::-webkit-scrollbar-thumb:hover,
+.studio-audit-list::-webkit-scrollbar-thumb:hover,
+.studio-preset-bar::-webkit-scrollbar-thumb:hover {
+  background: #C5832B;
+}
+
+/* Citation Link safety */
+.citation-link {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+/* ========================================================
+   RESPONSIVE DESIGN ACROSS DIFFERENT PC MONITORS & LAPTOPS
+   ======================================================== */
+
+/* 1. Low Height Displays (13" laptops, 768p/900p, or 125%/150% scaling) */
+@media (max-height: 820px) {
+  .studio-overlay {
+    padding: 10px;
+  }
+  .studio-modal {
+    height: 96vh;
+    max-height: 96vh;
+    border-radius: var(--radius-md);
+  }
+  .studio-header {
+    padding: 10px 18px;
+  }
+  .studio-shield-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .studio-title-block h2 {
+    font-size: 1.05rem;
+  }
+  .studio-subtitle {
+    font-size: 0.74rem;
+  }
+  .studio-source-bar, .studio-preset-bar {
+    padding: 6px 18px;
+    font-size: 0.78rem;
+  }
+  .studio-pane-header {
+    padding: 10px 16px;
+  }
+  .studio-draft-body, .studio-audit-list {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+  .studio-draft-textarea {
+    min-height: 150px;
+    padding: 12px;
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+  .studio-pane-actions {
+    padding: 8px 16px;
+  }
+  .studio-footer {
+    padding: 8px 18px;
+  }
+  .btn-run-audit, .btn-export-pdf {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+  .studio-finding-card {
+    padding: 12px;
+    gap: 8px;
+  }
+}
+
+/* 2. Narrower Viewports or Half-Screen Snapped Windows (< 1080px) */
+@media (max-width: 1080px) {
+  .studio-modal {
+    width: 98%;
+  }
+  .studio-header {
+    padding: 12px 18px;
+    gap: 10px;
+  }
+  .studio-source-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .studio-doc-select {
+    max-width: 280px;
+  }
+  .studio-footer {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .studio-footer-meta {
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.74rem;
+  }
+}
+
+/* 3. Small Monitors or Tightly Snapped Windows (< 860px) */
+@media (max-width: 860px) {
+  .studio-overlay {
+    padding: 8px;
+  }
+  .studio-modal {
+    height: 98vh;
+    max-height: 98vh;
+  }
+  .studio-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1.1fr 0.9fr;
+  }
+  .studio-pane-draft {
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .studio-engine-pill {
+    display: none;
+  }
+  .studio-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+  .studio-footer-actions {
+    justify-content: flex-end;
+  }
+  .studio-footer-meta {
+    justify-content: center;
+    text-align: center;
+  }
+}

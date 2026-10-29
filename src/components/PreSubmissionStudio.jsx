@@ -237,14 +237,39 @@ export default function PreSubmissionStudio({
   const handleApplyFix = (mismatch) => {
     if (!mismatch.draft_value || !mismatch.correct_value) return;
 
-    // Replace first matching case-insensitive occurrence or exact string
-    const regex = new RegExp(mismatch.draft_value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    let updatedDraft = draftText.replace(regex, mismatch.correct_value);
-    if (updatedDraft === draftText && mismatch.draft_value.length > 3) {
-      const words = mismatch.draft_value.split(/\s+/).filter(w => w.length > 2);
-      if (words.length > 0) {
-        const wordRegex = new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'), 'i');
-        updatedDraft = draftText.replace(wordRegex, mismatch.correct_value);
+    let updatedDraft = draftText;
+    const draftVal = mismatch.draft_value.trim();
+    const correctVal = mismatch.correct_value.trim();
+
+    // 1. Prevent duplicate corporate suffixes (e.g. Belicum -> Bellicum Pharmaceuticals, Inc.)
+    const suffixes = [
+      ' Pharmaceuticals, Inc.', ' Pharmaceuticals, Inc', ' Pharmaceuticals',
+      ' Biotec GmbH', ' Inc.', ' LLC', ' Corp', ' Corporation', ' AG', ' GmbH'
+    ];
+    let matchedSuffix = false;
+    for (const s of suffixes) {
+      if (correctVal.toLowerCase().endsWith(s.toLowerCase().trim())) {
+        const rootS = s.trim();
+        const suffixPattern = new RegExp(`${draftVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+${rootS.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+        if (suffixPattern.test(updatedDraft)) {
+          updatedDraft = updatedDraft.replace(suffixPattern, correctVal);
+          matchedSuffix = true;
+          break;
+        }
+      }
+    }
+
+    // 2. Direct case-insensitive replacement if suffix check did not apply
+    if (!matchedSuffix) {
+      const regex = new RegExp(draftVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      if (regex.test(updatedDraft)) {
+        updatedDraft = updatedDraft.replace(regex, correctVal);
+      } else if (draftVal.length > 3) {
+        const words = draftVal.split(/\s+/).filter(w => w.length > 2);
+        if (words.length > 0) {
+          const wordRegex = new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'), 'i');
+          updatedDraft = updatedDraft.replace(wordRegex, correctVal);
+        }
       }
     }
     setDraftText(updatedDraft);
